@@ -11,7 +11,7 @@ export async function ensureWorkspaceSchema(_input: Record<string, never>, conte
 	const checks = await Promise.all([
 		checkDatabase(notion, "docs", config.docsDatabaseId, [...REQUIRED_SCHEMAS.docs]),
 		checkDatabase(notion, "personaRegistry", config.personaRegistryDatabaseId, [...REQUIRED_SCHEMAS.personaRegistry]),
-		checkDatabase(notion, "docsIndex", config.docsIndexDatabaseId, [...REQUIRED_SCHEMAS.docsIndex]),
+		checkDatabase(notion, "features", config.featuresDatabaseId, [...REQUIRED_SCHEMAS.features]),
 		checkDatabase(notion, "personaRuns", config.personaRunsDatabaseId, [...REQUIRED_SCHEMAS.personaRuns]),
 	]);
 

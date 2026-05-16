@@ -10,19 +10,14 @@ export type PersonaRecord = {
 	syncStatus: string;
 };
 
-export type DocsIndexRecord = {
+export type FeatureRecord = {
 	pageId: string;
 	sourcePageId: string;
 	name: string;
 	ownerIds: string[];
-	contributorIds: string[];
 	tags: string[];
 	summary: string;
-	keyQuotes: string;
-	personaEnabled: boolean;
-	attributionSource: string;
-	attributionConfidence: string;
-	needsReview: boolean;
+	quotes: string;
 };
 
 export type RunRecord = {

@@ -11,10 +11,10 @@ This MVP is not a web app. It is a Notion-native system made of:
 - four Notion databases:
   - Docs
   - Persona Registry
-  - Docs Index
+  - Features
   - Persona Runs
 
-The Notion Agent does the reasoning and writing. The Worker provides deterministic tools for schema checks, document indexing, persona lookup, persona creation, and run-state updates.
+The Notion Agent does the reasoning and writing. The Worker provides deterministic tools for schema checks, features indexing, persona lookup, persona creation, and run-state updates.
 
 ## Repo Structure
 
@@ -47,7 +47,7 @@ Fill in:
 NOTION_API_TOKEN=
 DOCS_DATABASE_ID=
 PERSONA_REGISTRY_DATABASE_ID=
-DOCS_INDEX_DATABASE_ID=
+FEATURES_DATABASE_ID=
 PERSONA_RUNS_DATABASE_ID=
 ```
 
@@ -67,10 +67,10 @@ Validate database schemas:
 npm run exec -- ensureWorkspaceSchema -d '{}'
 ```
 
-Preview docs indexing:
+Preview feature sync:
 
 ```bash
-npm run exec -- syncDocsIndex -d '{"data_source_id":"SOURCE_DATABASE_ID","limit":10,"dry_run":true}'
+npm run exec -- syncFeatures -d '{"data_source_id":"SOURCE_DATABASE_ID","limit":10,"dry_run":true}'
 ```
 
 Resolve personas:

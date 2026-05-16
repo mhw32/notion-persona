@@ -1,7 +1,7 @@
 import { Worker } from "@notionhq/workers";
 import { j } from "@notionhq/workers/schema-builder";
-import { syncDocsIndex, suggestAttribution, updateDocIndexRow } from "./tools/docs.js";
-import { createOrUpdatePersona, getPersonaSourceDocs, resolvePersonas } from "./tools/personas.js";
+import { syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
+import { createOrUpdatePersona, getPersonaSourceFeatures, resolvePersonas } from "./tools/personas.js";
 import { appendRunEvent, createRun, getRunState, updateRun } from "./tools/runs.js";
 import { ensureWorkspaceSchema } from "./tools/schema.js";
 
@@ -13,15 +13,15 @@ const executeTool = <T extends (...args: any[]) => any>(fn: T) => fn as any;
 worker.tool("ensureWorkspaceSchema", {
 	title: "Ensure Workspace Schema",
 	description:
-		"Validate that the Docs, Persona Registry, Docs Index, and Persona Runs databases have the properties required by the Notion Personas MVP.",
+		"Validate that the Docs, Persona Registry, Features, and Persona Runs databases have the properties required by the Notion Personas MVP.",
 	schema: j.object({}),
 	execute: executeTool(ensureWorkspaceSchema),
 });
 
-worker.tool("syncDocsIndex", {
-	title: "Sync Docs Index",
+worker.tool("syncFeatures", {
+	title: "Sync Features",
 	description:
-		"Index pages from the user-facing Docs database, or another Notion source database, into the Worker-maintained Docs Index database.",
+		"Index pages from the user-facing Docs database, or another Notion source database, into the Worker-maintained Features database.",
 	schema: j.object({
 		data_source_id: j
 			.string()
@@ -30,31 +30,30 @@ worker.tool("syncDocsIndex", {
 		limit: j.number().describe("Maximum number of source pages to sync. Use null for the default.").nullable(),
 		dry_run: j.boolean().describe("When true, preview changes without writing to Notion.").nullable(),
 	}),
-	execute: executeTool(syncDocsIndex),
+	execute: executeTool(syncFeatures),
 });
 
 worker.tool("suggestAttribution", {
 	title: "Suggest Attribution",
 	description:
-		"Suggest Owner, Contributors, attribution source, and confidence for a Notion page using available Notion metadata.",
+		"Suggest the Owner for a Notion page using Docs.Owner or available Notion metadata.",
 	schema: j.object({
 		page_id: j.string().describe("The Notion page ID to inspect."),
 	}),
 	execute: executeTool(suggestAttribution),
 });
 
-worker.tool("updateDocIndexRow", {
-	title: "Update Docs Index Row",
+worker.tool("updateFeatureRow", {
+	title: "Update Features Row",
 	description:
-		"Update editable discovery fields on an existing Docs Index row, such as Summary, Key Quotes, tags, or Persona Enabled.",
+		"Update editable discovery fields on an existing Features row, such as Summary, Quotes, or Tags.",
 	schema: j.object({
-		page_id: j.string().describe("The source Notion page ID whose Docs Index row should be updated."),
+		page_id: j.string().describe("The source Notion page ID whose Features row should be updated."),
 		summary: j.string().describe("Updated short summary, or null to leave unchanged.").nullable(),
-		key_quotes: j.string().describe("Updated key quotes, or null to leave unchanged.").nullable(),
+		quotes: j.string().describe("Updated representative quotes, or null to leave unchanged.").nullable(),
 		tags: j.array(j.string()).describe("Updated tags, or null to leave unchanged.").nullable(),
-		persona_enabled: j.boolean().describe("Whether this doc may be used for persona grounding, or null to leave unchanged.").nullable(),
 	}),
-	execute: executeTool(updateDocIndexRow),
+	execute: executeTool(updateFeatureRow),
 });
 
 worker.tool("resolvePersonas", {
@@ -71,7 +70,7 @@ worker.tool("resolvePersonas", {
 worker.tool("createOrUpdatePersona", {
 	title: "Create Or Update Persona",
 	description:
-		"Create or update a Persona Registry row. Use this from Cloner mode after drafting a persona from indexed docs.",
+		"Create or update a Persona Registry row. Use this from Cloner mode after drafting a persona from indexed features.",
 	schema: j.object({
 		owner_user_id: j.string().describe("Notion user ID represented by this persona, or null for role personas.").nullable(),
 		handle: j.string().describe("Managed persona handle without @, such as mikewu or cto."),
@@ -87,25 +86,25 @@ worker.tool("createOrUpdatePersona", {
 	execute: executeTool(createOrUpdatePersona),
 });
 
-worker.tool("getPersonaSourceDocs", {
-	title: "Get Persona Source Docs",
+worker.tool("getPersonaSourceFeatures", {
+	title: "Get Persona Source Features",
 	description:
-		"Return Docs Index rows owned or contributed by a persona's owner user ID so the Notwin can draft or refresh persona prompts.",
+		"Return Features rows owned or contributed by a persona's owner user ID so the Notwin can draft or refresh persona prompts.",
 	schema: j.object({
 		handle: j.string().describe("Persona handle to inspect."),
 	}),
-	execute: executeTool(getPersonaSourceDocs),
+	execute: executeTool(getPersonaSourceFeatures),
 });
 
 worker.tool("createRun", {
 	title: "Create Persona Run",
 	description:
-		"Create a Persona Runs row after the Manager has selected personas and context docs for a review.",
+		"Create a Persona Runs row after the Manager has selected personas and context features for a review.",
 	schema: j.object({
 		page_id: j.string().describe("Target Notion page ID being reviewed."),
 		root_comment_id: j.string().describe("Comment ID that started the run, or null if unavailable.").nullable(),
 		selected_personas: j.array(j.string()).describe("Ordered persona handles selected for the run."),
-		selected_context_docs: j.array(j.string()).describe("Source page IDs or Docs Index row IDs selected as context."),
+		selected_context_docs: j.array(j.string()).describe("Source page IDs or Feature row IDs selected as context."),
 		max_turns: j.number().describe("Max persona turns before forced completion. Use null for default 20.").nullable(),
 	}),
 	execute: executeTool(createRun),
@@ -128,7 +127,7 @@ worker.tool("updateRun", {
 		run_id: j.string().describe("Run ID to update."),
 		status: j.string().describe("New status, or null to preserve current status.").nullable(),
 		selected_personas: j.array(j.string()).describe("Updated selected personas, or null to preserve.").nullable(),
-		selected_context_docs: j.array(j.string()).describe("Updated context docs, or null to preserve.").nullable(),
+		selected_context_docs: j.array(j.string()).describe("Updated context features, or null to preserve.").nullable(),
 		turn_count: j.number().describe("Updated total turn count, or null to preserve.").nullable(),
 		current_round: j.number().describe("Updated current round, or null to preserve.").nullable(),
 		agent_queue: j.array(j.string()).describe("Updated remaining queue, or null to preserve.").nullable(),

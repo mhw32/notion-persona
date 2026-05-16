@@ -16,25 +16,14 @@ export const DOCS_PROPERTIES = [
 	"Owner",
 ] as const;
 
-export const DOCS_INDEX_PROPERTIES = [
+export const FEATURES_PROPERTIES = [
 	"Name",
 	"Page ID",
-	"Source Page",
+	"Source",
 	"Owner",
-	"Contributors",
-	"Tags / Area",
 	"Summary",
-	"Key Quotes",
-	"Content Type",
-	"Persona Enabled",
-	"Attribution Source",
-	"Attribution Confidence",
-	"Needs Review",
-	"Last Indexed At",
-	"Created By",
-	"Created Time",
-	"Last Edited By",
-	"Last Edited Time",
+	"Quotes",
+	"Tags",
 ] as const;
 
 export const PERSONA_RUNS_PROPERTIES = [
@@ -57,7 +46,7 @@ export const PERSONA_RUNS_PROPERTIES = [
 export const REQUIRED_SCHEMAS = {
 	docs: DOCS_PROPERTIES,
 	personaRegistry: PERSONA_REGISTRY_PROPERTIES,
-	docsIndex: DOCS_INDEX_PROPERTIES,
+	features: FEATURES_PROPERTIES,
 	personaRuns: PERSONA_RUNS_PROPERTIES,
 } as const;
 

@@ -65,7 +65,7 @@ export async function createOrUpdatePersona(
 	return { ok: true, action: "created", persona_row_id: created.id, handle: input.handle };
 }
 
-export async function getPersonaSourceDocs(input: { handle: string }, context?: ToolContext) {
+export async function getPersonaSourceFeatures(input: { handle: string }, context?: ToolContext) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
 	const personaPage = await findPersonaByHandle(notion, config.personaRegistryDatabaseId, input.handle);
@@ -74,25 +74,24 @@ export async function getPersonaSourceDocs(input: { handle: string }, context?: 
 	}
 
 	const persona = pageToPersona(personaPage);
-	const docs = await queryAllCollection(notion, config.docsIndexDatabaseId, {}, 1000);
+	const docs = await queryAllCollection(notion, config.featuresDatabaseId, {}, 1000);
 	const relatedDocs = docs
 		.filter((doc) => {
 			const ownerIds = ((getProperty(doc, "Owner") as any)?.people ?? []).map((person: { id: string }) => person.id);
-			const contributorIds = ((getProperty(doc, "Contributors") as any)?.people ?? []).map((person: { id: string }) => person.id);
-			return persona.ownerUserId && [...ownerIds, ...contributorIds].includes(persona.ownerUserId);
+			return persona.ownerUserId && ownerIds.includes(persona.ownerUserId);
 		})
 		.map((doc) => ({
-			docs_index_row_id: doc.id,
+			feature_row_id: doc.id,
 			page_id: plainText(getProperty(doc, "Page ID")),
 			name: plainText(getProperty(doc, "Name")),
 			summary: plainText(getProperty(doc, "Summary")),
-			key_quotes: plainText(getProperty(doc, "Key Quotes")),
+			quotes: plainText(getProperty(doc, "Quotes")),
 		}));
 
 	return {
 		ok: true,
 		persona,
-		source_docs: relatedDocs,
+		source_features: relatedDocs,
 	};
 }
 
