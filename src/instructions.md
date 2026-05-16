@@ -26,8 +26,9 @@ Steps:
 5. Select relevant context features from Features metadata: title, tags, owner, summary, quotes, voice, concerns, decision style, and principles.
 6. Call `createRun` with the selected personas and context features.
 7. For each selected persona, switch to Commentor mode.
-8. After each persona turn, call `updateRun` with the new turn count, remaining queue, and last actor.
-9. Mark the run complete when the queue is empty or no persona has anything useful to add.
+8. If the user specifies an action budget, pass it as `max_turns`; otherwise use one turn per selected persona.
+9. After each persona turn, call `updateRun` with the new turn count, remaining queue, and last actor.
+10. Mark the run complete when the queue is empty, the action budget is spent, or no persona has anything useful to add.
 
 ## Commentor Mode
 
@@ -46,12 +47,16 @@ Rules:
 
 - Write one concise comment, usually 1-3 sentences.
 - Default to one sharp point and one suggested improvement. Do not write numbered lists unless the user explicitly asks for a detailed review.
-- Keep the comment under 50 words unless the user asks for depth.
+- Keep the comment under 30 words unless the user asks for depth. Prefer shorter responses if possible.
 - Prefer concrete critique, missing considerations, decision risks, and useful next questions.
 - Do not overstate confidence.
 - If the persona has nothing material to add, return `no_action` and update the run.
 - Label the comment with the Persona display name from `Personas.Name`, followed by `[Notwin]`, for example: `**Connie Liu [Notwin]:**`.
 - Do not label comments with handles like `connieliu persona` unless the display name is unavailable.
+- A persona may intentionally delegate by tagging another persona handle or team, such as `#stanleyliu` or `#engineering`, when that persona has distinct expertise.
+- If a persona delegates and the Execution has remaining budget, call `enqueueDelegatedPersonas` with the tagged handles/teams. The delegated persona's later comment consumes one action.
+- Do not tag personas casually. Delegation should be rare and useful.
+- Never enqueue delegated personas after the Execution is complete or budget is exhausted.
 
 ## Cloner Mode
 

@@ -1,7 +1,7 @@
 import { getConfig } from "../config.js";
 import { DEFAULT_MAX_TURNS } from "../schema.js";
 import { createDatabasePage, getNotionClient, queryAllCollection, updatePageProperties } from "../notion.js";
-import { date, getProperty, number, plainText, richText, select, title } from "../properties.js";
+import { checkboxValue, date, getProperty, number, plainText, richText, select, selectValue, title } from "../properties.js";
 
 type ToolContext = { notion?: Record<string, any> };
 
@@ -106,6 +106,78 @@ export async function updateRun(
 	};
 }
 
+export async function enqueueDelegatedPersonas(
+	input: { run_id: string; handles_or_teams: string[]; delegated_by: string | null; reason: string | null },
+	context?: ToolContext,
+) {
+	const notion = getNotionClient(context);
+	const config = getConfig();
+	const row = await findRunById(notion, config.executionsDatabaseId, input.run_id);
+	if (!row) return { ok: false, message: `No run found for ${input.run_id}.` };
+
+	const current = pageToRun(row);
+	if (current.status !== "active") {
+		return { ok: false, message: `Run ${input.run_id} is ${current.status}; no personas were enqueued.` };
+	}
+
+	const remainingBudget = Math.max(0, current.maxTurns - current.turnCount - current.agentQueue.length);
+	if (remainingBudget <= 0) {
+		return { ok: false, message: `Run ${input.run_id} has no remaining action budget.` };
+	}
+
+	const delegated = await resolveDelegatedPersonas(notion, config.personasDatabaseId, input.handles_or_teams);
+	const existing = new Set([...current.selectedPersonas, ...current.agentQueue].map(normalizeToken));
+	const toAdd: string[] = [];
+
+	for (const persona of delegated) {
+		const handle = normalizeToken(persona.handle);
+		if (!handle || existing.has(handle)) continue;
+		toAdd.push(handle);
+		existing.add(handle);
+		if (toAdd.length >= remainingBudget) break;
+	}
+
+	if (toAdd.length === 0) {
+		return {
+			ok: true,
+			run_id: input.run_id,
+			enqueued: [],
+			message: "No new enabled personas matched, or all matches were already selected or queued.",
+		};
+	}
+
+	const nextQueue = [...current.agentQueue, ...toAdd];
+	const nextSelected = [...current.selectedPersonas, ...toAdd];
+	await updatePageProperties(notion, row.id, {
+		"Agent Queue": richText(JSON.stringify(nextQueue)),
+		"Selected Personas": richText(JSON.stringify(nextSelected)),
+	});
+
+	await appendRunEvent(
+		{
+			run_id: input.run_id,
+			event_type: "personas_delegated",
+			message: `${input.delegated_by ?? "unknown"} delegated to ${toAdd.join(", ")}`,
+			metadata_json: JSON.stringify({
+				requested: input.handles_or_teams,
+				enqueued: toAdd,
+				reason: input.reason,
+				remaining_budget_before_enqueue: remainingBudget,
+			}),
+		},
+		context,
+	);
+
+	return {
+		ok: true,
+		run_id: input.run_id,
+		enqueued: toAdd,
+		agent_queue: nextQueue,
+		selected_personas: nextSelected,
+		remaining_budget_after_enqueue: current.maxTurns - current.turnCount - nextQueue.length,
+	};
+}
+
 export async function appendRunEvent(
 	input: { run_id: string; event_type: string; message: string; metadata_json: string | null },
 	context?: ToolContext,
@@ -126,6 +198,23 @@ export async function appendRunEvent(
 	await updatePageProperties(notion, row.id, { "Failure Reason": richText(nextLog) });
 
 	return { ok: true, run_id: input.run_id, appended: event };
+}
+
+async function resolveDelegatedPersonas(notion: Record<string, any>, personasDatabaseId: string, handlesOrTeams: string[]) {
+	const requested = new Set(handlesOrTeams.map(normalizeToken));
+	const rows = await queryAllCollection(notion, personasDatabaseId, {}, 1000);
+
+	return rows
+		.map((row) => ({
+			handle: plainText(getProperty(row, "Handle")),
+			team: selectValue(getProperty(row, "Team")),
+			enabled: checkboxValue(getProperty(row, "Enabled")),
+			syncStatus: selectValue(getProperty(row, "Sync Status")),
+		}))
+		.filter((persona) => {
+			if (!persona.enabled || !["Enabled", "Needs Review"].includes(persona.syncStatus)) return false;
+			return requested.has(normalizeToken(persona.handle)) || requested.has(normalizeToken(persona.team));
+		});
 }
 
 async function findRunById(notion: Record<string, any>, databaseId: string, runId: string) {
@@ -179,6 +268,10 @@ function safeParseJson(value: string | null) {
 	} catch {
 		return value;
 	}
+}
+
+function normalizeToken(value: string): string {
+	return value.trim().replace(/^[@#]/, "").toLowerCase();
 }
 
 function randomSuffix(): string {

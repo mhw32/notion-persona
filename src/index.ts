@@ -2,7 +2,7 @@ import { Worker } from "@notionhq/workers";
 import { j } from "@notionhq/workers/schema-builder";
 import { syncChangedFeatures, syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
 import { createOrUpdatePersona, getFeaturesForOwner, getPersonaSourceFeatures, listFeatureOwners, resolvePersonas } from "./tools/personas.js";
-import { appendRunEvent, createRun, getRunState, updateRun } from "./tools/runs.js";
+import { appendRunEvent, createRun, enqueueDelegatedPersonas, getRunState, updateRun } from "./tools/runs.js";
 import { ensureWorkspaceSchema } from "./tools/schema.js";
 
 const worker = new Worker();
@@ -182,6 +182,19 @@ worker.tool("updateRun", {
 		failure_reason: j.string().describe("Failure reason or log text, or null to preserve.").nullable(),
 	}),
 	execute: executeTool(updateRun),
+});
+
+worker.tool("enqueueDelegatedPersonas", {
+	title: "Enqueue Delegated Personas",
+	description:
+		"Resolve delegated #handles or #teams and append matching enabled personas to an active Execution queue if action budget remains.",
+	schema: j.object({
+		run_id: j.string().describe("Run ID whose Agent Queue should receive delegated personas."),
+		handles_or_teams: j.array(j.string()).describe("Delegated persona handles or teams, with or without # prefixes."),
+		delegated_by: j.string().describe("Persona handle that delegated, or null if unknown.").nullable(),
+		reason: j.string().describe("Short reason for delegation, or null.").nullable(),
+	}),
+	execute: executeTool(enqueueDelegatedPersonas),
 });
 
 worker.tool("appendRunEvent", {
