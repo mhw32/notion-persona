@@ -8,6 +8,8 @@ import {
 } from "../notion.js";
 import {
 	getProperty,
+	dateStart,
+	dateTime,
 	people,
 	peopleIds,
 	plainText,
@@ -27,7 +29,46 @@ export async function syncFeatures(
 	const config = getConfig();
 	const sourceId = input.data_source_id || config.docsDatabaseId;
 	const sourcePages = await queryAllCollection(notion, sourceId, {}, input.limit ?? 100);
-	const existingRows = await queryAllCollection(notion, config.featuresDatabaseId, {}, 1000);
+
+	return syncFeaturePages(notion, config.featuresDatabaseId, sourceId, sourcePages, Boolean(input.dry_run));
+}
+
+export async function syncChangedFeatures(
+	input: { limit: number | null; changed_since: string | null; dry_run: boolean | null },
+	context?: ToolContext,
+) {
+	const notion = getNotionClient(context);
+	const config = getConfig();
+	const filter = input.changed_since
+		? {
+				filter: {
+					timestamp: "last_edited_time",
+					last_edited_time: { on_or_after: input.changed_since },
+				},
+			}
+		: {};
+	const sourcePages = await queryAllCollection(
+		notion,
+		config.docsDatabaseId,
+		{
+			...filter,
+			sorts: [{ timestamp: "last_edited_time", direction: "descending" }],
+		},
+		input.limit ?? 25,
+	);
+	const staleSourcePages = await filterChangedSourcePages(notion, config.featuresDatabaseId, sourcePages);
+
+	return syncFeaturePages(notion, config.featuresDatabaseId, config.docsDatabaseId, staleSourcePages, Boolean(input.dry_run));
+}
+
+async function syncFeaturePages(
+	notion: Record<string, any>,
+	featuresDatabaseId: string,
+	sourceId: string,
+	sourcePages: any[],
+	dryRun: boolean,
+) {
+	const existingRows = await queryAllCollection(notion, featuresDatabaseId, {}, 1000);
 	const existingBySourcePageId = new Map<string, any>();
 
 	for (const row of existingRows) {
@@ -43,17 +84,22 @@ export async function syncFeatures(
 		const inferred = inferAttribution(sourcePage, existing);
 		const properties = buildFeatureProperties(sourcePage, existing, inferred);
 
-		if (input.dry_run) {
-			changes.push({ action: existing ? "would_update" : "would_create", page_id: sourcePageId, title: titleFromPage(sourcePage) });
+		if (dryRun) {
+			changes.push({
+				action: existing ? "would_update" : "would_create",
+				page_id: sourcePageId,
+				title: titleFromPage(sourcePage),
+				last_edited_time: sourcePage.last_edited_time,
+			});
 			continue;
 		}
 
 		if (existing) {
 			await updatePageProperties(notion, existing.id, properties);
-			changes.push({ action: "updated", page_id: sourcePageId, feature_row_id: existing.id });
+			changes.push({ action: "updated", page_id: sourcePageId, feature_row_id: existing.id, last_edited_time: sourcePage.last_edited_time });
 		} else {
-			const created = await createDatabasePage(notion, config.featuresDatabaseId, properties);
-			changes.push({ action: "created", page_id: sourcePageId, feature_row_id: created.id });
+			const created = await createDatabasePage(notion, featuresDatabaseId, properties);
+			changes.push({ action: "created", page_id: sourcePageId, feature_row_id: created.id, last_edited_time: sourcePage.last_edited_time });
 		}
 	}
 
@@ -148,7 +194,25 @@ function buildFeatureProperties(sourcePage: any, existing: any | null, inferred:
 		Concerns: richText(existingConcerns),
 		"Decision Style": richText(existingDecisionStyle),
 		Principles: richText(existingPrinciples),
+		"Last Updated Time": dateTime(sourcePage.last_edited_time ?? null),
 	};
+}
+
+async function filterChangedSourcePages(notion: Record<string, any>, featuresDatabaseId: string, sourcePages: any[]) {
+	const existingRows = await queryAllCollection(notion, featuresDatabaseId, {}, 1000);
+	const existingBySourcePageId = new Map<string, any>();
+
+	for (const row of existingRows) {
+		const sourcePageId = plainText(getProperty(row, "Page ID"));
+		if (sourcePageId) existingBySourcePageId.set(sourcePageId, row);
+	}
+
+	return sourcePages.filter((sourcePage) => {
+		const existing = existingBySourcePageId.get(sourcePage.id);
+		if (!existing) return true;
+		const lastSyncedSourceUpdate = dateStart(getProperty(existing, "Last Updated Time"));
+		return !lastSyncedSourceUpdate || lastSyncedSourceUpdate < sourcePage.last_edited_time;
+	});
 }
 
 type Attribution = {

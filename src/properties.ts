@@ -32,6 +32,10 @@ export function date(iso: string | null | undefined) {
 	return { date: iso ? { start: iso } : null };
 }
 
+export function dateTime(iso: string | null | undefined) {
+	return { date: iso ? { start: iso } : null };
+}
+
 export function url(value: string | null | undefined) {
 	return { url: value ?? null };
 }
@@ -47,6 +51,11 @@ export function plainText(property: unknown): string {
 	if (prop.type === "url") return prop.url ?? "";
 	if (prop.type === "select") return prop.select?.name ?? "";
 	return "";
+}
+
+export function dateStart(property: unknown): string {
+	const prop = property as { date?: { start?: string } | null };
+	return prop.date?.start ?? "";
 }
 
 export function textFromRichText(items: RichText | undefined): string {

@@ -32,6 +32,7 @@ export const FEATURES_PROPERTIES = [
 	"Concerns",
 	"Decision Style",
 	"Principles",
+	"Last Updated Time",
 	"Tags",
 ] as const;
 

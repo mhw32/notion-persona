@@ -185,6 +185,7 @@ Worker-maintained index of documents that personas can use for grounding. Each r
 | Concerns | Text | Per-document risks, objections, or issues the owner surfaces |
 | Decision Style | Text | Per-document evidence of how the owner makes decisions |
 | Principles | Text | Per-document values or operating principles expressed by the owner |
+| Last Updated Time | Date | Source Docs page last_edited_time from the last successful Features sync |
 | Tags | Multi-select | Topic, product area, team, or domain tags extracted from the source document |
 
 ### 4. Executions Database

@@ -1,6 +1,6 @@
 import { Worker } from "@notionhq/workers";
 import { j } from "@notionhq/workers/schema-builder";
-import { syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
+import { syncChangedFeatures, syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
 import { createOrUpdatePersona, getFeaturesForOwner, getPersonaSourceFeatures, resolvePersonas } from "./tools/personas.js";
 import { appendRunEvent, createRun, getRunState, updateRun } from "./tools/runs.js";
 import { ensureWorkspaceSchema } from "./tools/schema.js";
@@ -31,6 +31,21 @@ worker.tool("syncFeatures", {
 		dry_run: j.boolean().describe("When true, preview changes without writing to Notion.").nullable(),
 	}),
 	execute: executeTool(syncFeatures),
+});
+
+worker.tool("syncChangedFeatures", {
+	title: "Sync Changed Features",
+	description:
+		"Sync the most recently edited Docs rows into Features. Use changed_since to process only Docs edited after a known timestamp.",
+	schema: j.object({
+		limit: j.number().describe("Maximum number of recently edited Docs rows to sync. Use null for the default.").nullable(),
+		changed_since: j
+			.string()
+			.describe("ISO timestamp. Only Docs edited on or after this time are synced. Use null to sync the most recent Docs rows.")
+			.nullable(),
+		dry_run: j.boolean().describe("When true, preview changes without writing to Notion.").nullable(),
+	}),
+	execute: executeTool(syncChangedFeatures),
 });
 
 worker.tool("suggestAttribution", {
