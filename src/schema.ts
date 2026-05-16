@@ -1,4 +1,4 @@
-export const PERSONA_REGISTRY_PROPERTIES = [
+export const PERSONAS_PROPERTIES = [
 	"Name",
 	"Handle",
 	"Role",
@@ -35,7 +35,7 @@ export const FEATURES_PROPERTIES = [
 	"Tags",
 ] as const;
 
-export const PERSONA_RUNS_PROPERTIES = [
+export const EXECUTIONS_PROPERTIES = [
 	"Run ID",
 	"Target Page ID",
 	"Root Comment ID",
@@ -54,9 +54,9 @@ export const PERSONA_RUNS_PROPERTIES = [
 
 export const REQUIRED_SCHEMAS = {
 	docs: DOCS_PROPERTIES,
-	personaRegistry: PERSONA_REGISTRY_PROPERTIES,
+	personas: PERSONAS_PROPERTIES,
 	features: FEATURES_PROPERTIES,
-	personaRuns: PERSONA_RUNS_PROPERTIES,
+	executions: EXECUTIONS_PROPERTIES,
 } as const;
 
 export const DEFAULT_MAX_TURNS = 20;

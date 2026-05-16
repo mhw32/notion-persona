@@ -13,7 +13,7 @@ const executeTool = <T extends (...args: any[]) => any>(fn: T) => fn as any;
 worker.tool("ensureWorkspaceSchema", {
 	title: "Ensure Workspace Schema",
 	description:
-		"Validate that the Docs, Persona Registry, Features, and Persona Runs databases have the properties required by the Notion Personas MVP.",
+		"Validate that the Docs, Personas, Features, and Executions databases have the properties required by the Notion Personas MVP.",
 	schema: j.object({}),
 	execute: executeTool(ensureWorkspaceSchema),
 });
@@ -63,7 +63,7 @@ worker.tool("updateFeatureRow", {
 worker.tool("resolvePersonas", {
 	title: "Resolve Personas",
 	description:
-		"Resolve managed handles or tags from the Persona Registry into enabled personas for a review run.",
+		"Resolve managed handles or tags from the Personas into enabled personas for a review run.",
 	schema: j.object({
 		handles_or_tags: j.array(j.string()).describe("Handles or tags to resolve, with or without @ prefixes."),
 		include_disabled: j.boolean().describe("Whether to include disabled/draft personas. Usually false.").nullable(),
@@ -74,7 +74,7 @@ worker.tool("resolvePersonas", {
 worker.tool("createOrUpdatePersona", {
 	title: "Create Or Update Persona",
 	description:
-		"Create or update a Persona Registry row. Use this from Cloner mode after drafting a persona from indexed features.",
+		"Create or update a Personas row. Use this from Cloner mode after drafting a persona from indexed features.",
 	schema: j.object({
 		owner_user_id: j.string().describe("Notion user ID represented by this persona, or null for role personas.").nullable(),
 		handle: j.string().describe("Managed persona handle without @, such as mikewu or cto."),
@@ -119,9 +119,9 @@ worker.tool("getFeaturesForOwner", {
 });
 
 worker.tool("createRun", {
-	title: "Create Persona Run",
+	title: "Create Execution",
 	description:
-		"Create a Persona Runs row after the Manager has selected personas and context features for a review.",
+		"Create an Executions row after the Manager has selected personas and context features for a review.",
 	schema: j.object({
 		page_id: j.string().describe("Target Notion page ID being reviewed."),
 		root_comment_id: j.string().describe("Comment ID that started the run, or null if unavailable.").nullable(),
@@ -134,7 +134,7 @@ worker.tool("createRun", {
 
 worker.tool("getRunState", {
 	title: "Get Run State",
-	description: "Read a Persona Run row by run ID.",
+	description: "Read an Execution row by run ID.",
 	schema: j.object({
 		run_id: j.string().describe("Run ID to retrieve."),
 	}),
@@ -142,9 +142,9 @@ worker.tool("getRunState", {
 });
 
 worker.tool("updateRun", {
-	title: "Update Persona Run",
+	title: "Update Execution",
 	description:
-		"Update Persona Run state after each persona turn. Enforces max-turn and empty-queue completion guardrails.",
+		"Update Execution state after each persona turn. Enforces max-turn and empty-queue completion guardrails.",
 	schema: j.object({
 		run_id: j.string().describe("Run ID to update."),
 		status: j.string().describe("New status, or null to preserve current status.").nullable(),
@@ -164,7 +164,7 @@ worker.tool("updateRun", {
 worker.tool("appendRunEvent", {
 	title: "Append Run Event",
 	description:
-		"Append a lightweight run event to the Persona Run log field for debugging and observability.",
+		"Append a lightweight run event to the Execution log field for debugging and observability.",
 	schema: j.object({
 		run_id: j.string().describe("Run ID to append to."),
 		event_type: j.string().describe("Event type, such as run_created or persona_comment_created."),

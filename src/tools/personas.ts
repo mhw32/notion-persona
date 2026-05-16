@@ -22,7 +22,7 @@ export async function resolvePersonas(input: { handles_or_tags: string[]; includ
 	const notion = getNotionClient(context);
 	const config = getConfig();
 	const requested = new Set(input.handles_or_tags.map(normalizeToken));
-	const pages = await queryAllCollection(notion, config.personaRegistryDatabaseId, {}, 1000);
+	const pages = await queryAllCollection(notion, config.personasDatabaseId, {}, 1000);
 	const personas = pages.map(pageToPersona).filter((persona) => {
 		if (!input.include_disabled && (!persona.enabled || !["Enabled", "Needs Review"].includes(persona.syncStatus))) return false;
 		if (requested.has(normalizeToken(persona.handle))) return true;
@@ -58,7 +58,7 @@ export async function createOrUpdatePersona(
 ) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
-	const existing = await findPersonaByHandle(notion, config.personaRegistryDatabaseId, input.handle);
+	const existing = await findPersonaByHandle(notion, config.personasDatabaseId, input.handle);
 	const properties = buildPersonaProperties(input);
 
 	if (existing) {
@@ -66,14 +66,14 @@ export async function createOrUpdatePersona(
 		return { ok: true, action: "updated", persona_row_id: existing.id, handle: input.handle };
 	}
 
-	const created = await createDatabasePage(notion, config.personaRegistryDatabaseId, properties);
+	const created = await createDatabasePage(notion, config.personasDatabaseId, properties);
 	return { ok: true, action: "created", persona_row_id: created.id, handle: input.handle };
 }
 
 export async function getPersonaSourceFeatures(input: { handle: string }, context?: ToolContext) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
-	const personaPage = await findPersonaByHandle(notion, config.personaRegistryDatabaseId, input.handle);
+	const personaPage = await findPersonaByHandle(notion, config.personasDatabaseId, input.handle);
 	if (!personaPage) {
 		return { ok: false, message: `No persona found for handle ${input.handle}.` };
 	}

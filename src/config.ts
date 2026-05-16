@@ -1,16 +1,16 @@
 export type AppConfig = {
 	docsDatabaseId: string;
-	personaRegistryDatabaseId: string;
+	personasDatabaseId: string;
 	featuresDatabaseId: string;
-	personaRunsDatabaseId: string;
+	executionsDatabaseId: string;
 };
 
 export function getConfig(): AppConfig {
 	return {
 		docsDatabaseId: readEnv("DOCS_DATABASE_ID"),
-		personaRegistryDatabaseId: readEnv("PERSONA_REGISTRY_DATABASE_ID"),
+		personasDatabaseId: readEnv("PERSONAS_DATABASE_ID"),
 		featuresDatabaseId: readEnv("FEATURES_DATABASE_ID"),
-		personaRunsDatabaseId: readEnv("PERSONA_RUNS_DATABASE_ID"),
+		executionsDatabaseId: readEnv("EXECUTIONS_DATABASE_ID"),
 	};
 }
 

@@ -10,9 +10,9 @@ This MVP is not a web app. It is a Notion-native system made of:
 - one TypeScript Notion Worker exposing Agent tools
 - four Notion databases:
   - Docs
-  - Persona Registry
+  - Personas
   - Features
-  - Persona Runs
+  - Executions
 
 The Notion Agent does the reasoning and writing. The Worker provides deterministic tools for schema checks, features indexing, persona lookup, persona creation, and run-state updates.
 
@@ -46,9 +46,9 @@ Fill in:
 ```text
 NOTION_API_TOKEN=
 DOCS_DATABASE_ID=
-PERSONA_REGISTRY_DATABASE_ID=
+PERSONAS_DATABASE_ID=
 FEATURES_DATABASE_ID=
-PERSONA_RUNS_DATABASE_ID=
+EXECUTIONS_DATABASE_ID=
 ```
 
 `NOTION_API_TOKEN` is needed for local tool execution. Hosted Notion Agent tool calls receive a Notion client from the Worker runtime.
@@ -89,4 +89,4 @@ After deploy, attach the Worker tools to the Notion Agent and paste the instruct
 
 ## Current Assumption
 
-Manager, Commentor, and Cloner are implemented as modes of a single Notion Agent. The Worker does not require separate Notion Agent IDs. If those roles are split into separate native Notion Agents later, add optional agent IDs/URLs to configuration and the Persona Registry.
+Manager, Commentor, and Cloner are implemented as modes of a single Notion Agent. The Worker does not require separate Notion Agent IDs. If those roles are split into separate native Notion Agents later, add optional agent IDs/URLs to configuration and the Personas.

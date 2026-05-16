@@ -12,17 +12,17 @@ The MVP uses a single hand-crafted **Notwin** in Notion, supported by Notion dat
 
 **Persona** - A simulated person or role. Defined by a handle, display name, tags, role, system prompt, source pages, and enabled status.
 
-**Persona Registry** - A Notion database containing all personas. It is the source of truth for handles, tags, prompts, and source pages.
+**Personas** - A Notion database containing all personas. It is the source of truth for handles, tags, prompts, and source pages.
 
 **Docs** - The user-facing Notion database where people create and edit raw company documents.
 
 **Features** - A Worker-maintained Notion database that maps one-to-one to source documents in Docs or other future sources. Each row includes attribution metadata, summary, key quotes, and indexing fields used for routing and grounding.
 
-**Persona Run** - A persisted review/debate session for a page or comment thread. Stores status, selected personas, context features, turn count, queue, processed comments, and stop conditions.
+**Execution** - A persisted review/debate session for a page or comment thread. Stores status, selected personas, context features, turn count, queue, processed comments, and stop conditions.
 
 **Notwin** - The single Notion Agent used by humans. It acts as Manager, Commentor, and Cloner depending on the task.
 
-**Notion Worker** - A Notion-hosted TypeScript backend used by the Notwin for deterministic tools: indexing docs, updating databases, enforcing run state, and maintaining schemas.
+**Notion Worker** - A Notion-hosted TypeScript backend used by the Notwin for deterministic tools: indexing docs, updating databases, enforcing execution state, and maintaining schemas.
 
 ---
 
@@ -37,16 +37,16 @@ Responsible for orchestration.
 **Inputs:**
 
 - Triggering comment
-- Persona Registry
+- Personas
 - Features
-- Persona Runs
+- Executions
 
 **Responsibilities:**
 
 1. Parse managed `@handles` and `@tags`
-2. Resolve matching enabled personas from the Persona Registry
+2. Resolve matching enabled personas from the Personas
 3. Select relevant context features from the Features
-4. Create or update the Persona Run
+4. Create or update the Execution
 5. Manage the queue, turn count, and stop conditions
 6. Hand a persona + context bundle to Commentor
 
@@ -81,7 +81,7 @@ Responsible for creating or refreshing persona definitions.
 - Summaries
 - Key quotes
 - Full content where useful
-- Existing Persona Registry row, if any
+- Existing Personas row, if any
 
 **Responsibilities:**
 
@@ -116,17 +116,17 @@ Notwin wakes up in Notion
         |
         v
 Manager mode:
-1. Reads Persona Registry
+1. Reads Personas
 2. Resolves @engineering to enabled personas
 3. Reads Features metadata
 4. Selects relevant context features
-5. Creates/updates Persona Run via Worker tools
+5. Creates/updates Execution via Worker tools
         |
         v
 Commentor mode:
 6. For each selected persona, reads persona prompt + full selected features
 7. Writes one comment in that persona's voice
-8. Updates Persona Run via Worker tools
+8. Updates Execution via Worker tools
         |
         v
 Stop when queue is empty, no persona acts, max turns reached, or run is manually completed
@@ -138,7 +138,7 @@ The Worker is not the primary reasoning layer in this MVP. It provides tools and
 
 ## Databases
 
-### 1. Persona Registry Database
+### 1. Personas Database
 
 User/admin-editable database defining available personas.
 
@@ -187,7 +187,7 @@ Worker-maintained index of documents that personas can use for grounding. Each r
 | Principles | Text | Per-document values or operating principles expressed by the owner |
 | Tags | Multi-select | Topic, product area, team, or domain tags extracted from the source document |
 
-### 4. Persona Runs Database
+### 4. Executions Database
 
 Mostly system-owned database representing active and historical review/debate sessions.
 
@@ -246,7 +246,7 @@ Used by Manager to choose personas and docs. This should be lightweight.
 
 **Fields:**
 
-- Persona Registry entries
+- Personas entries
 - Triggering comment
 - Target doc metadata
 - Features metadata: title, owner, tags, summary, quotes, voice, concerns, decision style, principles
@@ -280,7 +280,7 @@ A user starts the flow by mentioning the Notwin and at least one managed handle 
 @Notwin @cto @sales debate the launch risk
 ```
 
-The user must specify a person, role, or team tag. Managed handles and tags are defined in the Persona Registry.
+The user must specify a person, role, or team tag. Managed handles and tags are defined in the Personas.
 
 **Resolution rules:**
 
@@ -299,7 +299,7 @@ The MVP uses round-based sequential execution rather than true parallel executio
 Human comment mentions @Notwin @engineering
 -> Manager resolves @engineering to [eng1, eng2, eng3]
 -> Manager selects context features from Features
--> Worker creates Persona Run with queue [eng1, eng2, eng3]
+-> Worker creates Execution with queue [eng1, eng2, eng3]
 -> Commentor writes as eng1
 -> Worker updates run: turn_count = 1, queue = [eng2, eng3]
 -> Commentor writes as eng2
@@ -314,7 +314,7 @@ This is intentionally linear. Sequential turns are easier to debug, avoid stale-
 Later versions can support two-phase rounds:
 
 1. Each persona generates a proposed action from the same snapshot
-2. Proposals are stored in run state
+2. Proposals are stored in execution state
 3. A coordinator publishes approved actions in deterministic order
 
 ---
@@ -323,7 +323,7 @@ Later versions can support two-phase rounds:
 
 A run must stop when any of these are true:
 
-- Persona Run `Status` is not `active`
+- Execution `Status` is not `active`
 - `Turn Count >= Max Turns`
 - Queue is empty and no managed handle/tag was intentionally invoked again
 - All selected personas return `no_action`
@@ -385,10 +385,10 @@ For MVP, the most important tools are:
 | --- | --- |
 | User-facing agent | Notion Agent: Notwin |
 | Deterministic backend | Notion Workers (TypeScript) |
-| Persona storage | Persona Registry Notion database |
+| Persona storage | Personas Notion database |
 | User-facing documents | Docs Notion database |
 | Document index | Features Notion database |
-| Run state | Persona Runs Notion database |
+| Run state | Executions Notion database |
 | Workspace I/O | Notion API / Notion SDK / Worker tools |
 | Reasoning | Notion Agent runtime for MVP; external LLM API optional later |
 
@@ -398,16 +398,16 @@ For MVP, the most important tools are:
 
 1. Create one hand-crafted Notion Agent: `Notwin`
 2. Create Docs DB
-3. Create Persona Registry DB
+3. Create Personas DB
 4. Create Features DB
-5. Create Persona Runs DB
+5. Create Executions DB
 5. Build Worker tools for schema setup, features indexing, persona creation, and run updates
 6. Implement attribution priority and confidence fields
 7. Add Summary + Quotes generation for docs
 8. Add Cloner mode to create draft personas from recent owned/contributed features
 9. Add Manager mode to resolve handles/tags and select context
 10. Add Commentor mode to write one persona comment at a time
-11. Enforce max turns and run status through Persona Runs
+11. Enforce max turns and run status through Executions
 
 ---
 
@@ -418,4 +418,4 @@ For MVP, the most important tools are:
 - What is the initial max number of personas per run: 2, 3, or more?
 - How often should summaries, key quotes, and persona prompts be refreshed?
 - Should third-party sources like Slack be imported into the same Docs DB or a separate source-specific DB?
-- If Notion exposes programmable Agent Library APIs later, should Persona Registry sync into native Notion Agents?
+- If Notion exposes programmable Agent Library APIs later, should Personas sync into native Notion Agents?

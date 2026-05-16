@@ -2,22 +2,22 @@
 
 ## Goal
 
-Build the MVP described in [spec.md](./spec.md): one Notion-native Notwin backed by Notion databases and Notion Worker tools. The MVP should let a user invoke personas from a Notion comment, select matching personas from the registry, choose relevant context from indexed features, write persona-style comments, and record run state in Notion.
+Build the MVP described in [spec.md](./spec.md): one Notion-native Notwin backed by Notion databases and Notion Worker tools. The MVP should let a user invoke personas from a Notion comment, select matching personas from Personas, choose relevant context from indexed features, write persona-style comments, and record execution state in Notion.
 
 ## MVP Scope
 
 Included:
 
-- Persona Registry database
+- Personas database
 - Docs database
 - Features database
-- Persona Runs database
+- Executions database
 - One hand-crafted Notion Agent
 - One Notion Worker exposing deterministic tools
 - Manual or agent-triggered features indexing
 - Persona creation/refinement from indexed features
 - Comment-driven review flow using managed handles/tags
-- Max-turn and run-status guardrails
+- Max-turn and execution-status guardrails
 
 Deferred:
 
@@ -45,9 +45,9 @@ Notion Worker
         v
 Notion databases:
 - Docs
-- Persona Registry
+- Personas
 - Features
-- Persona Runs
+- Executions
 ```
 
 The Notion Agent does reasoning and writing. The Worker does deterministic setup, lookup, state mutation, and logging.
@@ -79,9 +79,9 @@ Environment variables:
 ```text
 NOTION_TOKEN
 DOCS_DATABASE_ID
-PERSONA_REGISTRY_DATABASE_ID
+PERSONAS_DATABASE_ID
 FEATURES_DATABASE_ID
-PERSONA_RUNS_DATABASE_ID
+EXECUTIONS_DATABASE_ID
 ```
 
 Acceptance criteria:
@@ -96,9 +96,9 @@ Deliverables:
 
 - Create the four Notion databases manually or with a setup tool:
   - Docs
-  - Persona Registry
+  - Personas
   - Features
-  - Persona Runs
+  - Executions
 - Store database IDs in Worker environment variables.
 - Add a Worker tool to verify required schema fields.
 
@@ -154,7 +154,7 @@ Acceptance criteria:
 - `Docs.Owner` is inherited into `Features.Owner` as high-confidence attribution.
 - Features rows keep `Summary`, `Quotes`, and `Tags` when resynced.
 
-## Phase 3 - Persona Registry and Cloning
+## Phase 3 - Personas and Cloning
 
 Deliverables:
 
@@ -187,7 +187,7 @@ Persona creation flow:
    - principles
    - system prompt
    - source pages
-4. Worker writes a Persona Registry row with:
+4. Worker writes a Personas row with:
    - `Enabled = false`
    - `Sync Status = Needs Review`
 
@@ -201,7 +201,7 @@ Acceptance criteria:
 
 Deliverables:
 
-- Implement Persona Runs creation and updates.
+- Implement Executions creation and updates.
 - Enforce max turns.
 - Store selected personas, selected features, queue, and processed comment IDs.
 
@@ -253,7 +253,7 @@ Deliverables:
 Manager behavior:
 
 1. Require the user to specify at least one managed handle or tag.
-2. Resolve handles/tags through the Persona Registry.
+2. Resolve handles/tags through the Personas.
 3. Cap selected personas for MVP, default max 3.
 4. Select context features using Features metadata:
    - title
@@ -261,7 +261,7 @@ Manager behavior:
    - tags
    - summary
    - quotes
-5. Create a Persona Run.
+5. Create an Execution.
 6. Hand each persona/context bundle to Commentor.
 
 Commentor behavior:
@@ -270,7 +270,7 @@ Commentor behavior:
 2. Read target doc and selected features.
 3. Write one concise, grounded comment in that persona's voice.
 4. Prefix or label the comment clearly, since comments may appear as Notwin.
-5. Update run state after each comment.
+5. Update execution state after each comment.
 
 Cloner behavior:
 
@@ -303,15 +303,15 @@ Notwin:
 1. Resolves @engineering
 2. Selects up to 3 enabled personas
 3. Selects relevant context features
-4. Creates Persona Run
+4. Creates Execution
 5. Writes one comment per selected persona
 6. Marks run complete
 ```
 
 Acceptance criteria:
 
-- One comment invocation produces a completed Persona Run row.
-- Persona Run shows selected personas, selected features, turn count, and status.
+- One comment invocation produces a completed Execution row.
+- Execution shows selected personas, selected features, turn count, and status.
 - Each persona comment is grounded in the target doc or selected features.
 - No infinite loop is possible in the MVP flow.
 
@@ -347,7 +347,7 @@ Failure handling:
 Acceptance criteria:
 
 - Every run has enough state to debug from Notion alone.
-- Failures are visible in Persona Runs.
+- Failures are visible in Executions.
 - Worker tools return structured errors that Notwin can explain.
 
 ## Phase 8 - Optional Automation

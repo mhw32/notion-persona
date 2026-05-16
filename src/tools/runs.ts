@@ -35,7 +35,7 @@ export async function createRun(
 		"Lock Until": date(null),
 		"Failure Reason": richText(""),
 	};
-	const created = await createDatabasePage(notion, config.personaRunsDatabaseId, properties);
+	const created = await createDatabasePage(notion, config.executionsDatabaseId, properties);
 
 	return {
 		ok: true,
@@ -50,7 +50,7 @@ export async function createRun(
 export async function getRunState(input: { run_id: string }, context?: ToolContext) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
-	const row = await findRunById(notion, config.personaRunsDatabaseId, input.run_id);
+	const row = await findRunById(notion, config.executionsDatabaseId, input.run_id);
 	if (!row) return { ok: false, message: `No run found for ${input.run_id}.` };
 	return { ok: true, run: pageToRun(row) };
 }
@@ -73,7 +73,7 @@ export async function updateRun(
 ) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
-	const row = await findRunById(notion, config.personaRunsDatabaseId, input.run_id);
+	const row = await findRunById(notion, config.executionsDatabaseId, input.run_id);
 	if (!row) return { ok: false, message: `No run found for ${input.run_id}.` };
 
 	const current = pageToRun(row);
@@ -112,7 +112,7 @@ export async function appendRunEvent(
 ) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
-	const row = await findRunById(notion, config.personaRunsDatabaseId, input.run_id);
+	const row = await findRunById(notion, config.executionsDatabaseId, input.run_id);
 	if (!row) return { ok: false, message: `No run found for ${input.run_id}.` };
 
 	const previous = plainText(getProperty(row, "Failure Reason"));
