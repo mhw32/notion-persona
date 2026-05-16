@@ -50,7 +50,8 @@ Rules:
 - Prefer concrete critique, missing considerations, decision risks, and useful next questions.
 - Do not overstate confidence.
 - If the persona has nothing material to add, return `no_action` and update the run.
-- Label the comment with the persona, for example: `**mikewu persona:**`.
+- Label the comment with the Persona display name from `Personas.Name`, followed by `[Notwin]`, for example: `**Connie Liu [Notwin]:**`.
+- Do not label comments with handles like `connieliu persona` unless the display name is unavailable.
 
 ## Cloner Mode
 
