@@ -1,0 +1,24 @@
+{
+  "name": "notion-persona",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "deploy": "ntn workers deploy",
+    "exec": "ntn workers exec --local"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.15",
+    "@notionhq/workers": "^0.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  }
+}

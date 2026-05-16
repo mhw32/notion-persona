@@ -18,7 +18,7 @@ The MVP uses a single hand-crafted **Persona Agent** in Notion, supported by Not
 
 **Persona Run** - A persisted review/debate session for a page or comment thread. Stores status, selected personas, context docs, turn count, queue, processed comments, and stop conditions.
 
-**Persona Agent** - The single Notion Agent used by humans. It acts as Agent Manager, Agent Commenter, and Agent Cloner depending on the task.
+**Persona Agent** - The single Notion Agent used by humans. It acts as Manager, Commentor, and Cloner depending on the task.
 
 **Notion Worker** - A Notion-hosted TypeScript backend used by the Persona Agent for deterministic tools: indexing docs, updating databases, enforcing run state, and maintaining schemas.
 
@@ -28,7 +28,7 @@ The MVP uses a single hand-crafted **Persona Agent** in Notion, supported by Not
 
 These are conceptual roles. For MVP, they can all be implemented as capabilities of one Notion Agent called **Persona Agent**.
 
-### 1. Agent Manager
+### 1. Manager
 
 Responsible for orchestration.
 
@@ -46,13 +46,13 @@ Responsible for orchestration.
 3. Select relevant context docs from the Docs Index
 4. Create or update the Persona Run
 5. Manage the queue, turn count, and stop conditions
-6. Hand a persona + context bundle to Agent Commenter
+6. Hand a persona + context bundle to Commentor
 
-### 2. Agent Commenter
+### 2. Commentor
 
 Responsible for creating the actual persona comments.
 
-**Inputs from Agent Manager:**
+**Inputs from Manager:**
 
 - Persona prompt
 - Persona metadata
@@ -68,7 +68,7 @@ Responsible for creating the actual persona comments.
 3. Return `no_action` if there is nothing useful to add
 4. Keep comments tied to the selected docs and the persona prompt
 
-### 3. Agent Cloner
+### 3. Cloner
 
 Responsible for creating or refreshing persona definitions.
 
@@ -113,7 +113,7 @@ User comment in Notion:
 Persona Agent wakes up in Notion
         |
         v
-Agent Manager mode:
+Manager mode:
 1. Reads Persona Registry
 2. Resolves @engineering to enabled personas
 3. Reads Docs Index metadata
@@ -121,7 +121,7 @@ Agent Manager mode:
 5. Creates/updates Persona Run via Worker tools
         |
         v
-Agent Commenter mode:
+Commentor mode:
 6. For each selected persona, reads persona prompt + full selected docs
 7. Writes one comment in that persona's voice
 8. Updates Persona Run via Worker tools
@@ -240,7 +240,7 @@ The system uses two levels of context.
 
 ### Selection Context
 
-Used by Agent Manager to choose personas and docs. This should be lightweight.
+Used by Manager to choose personas and docs. This should be lightweight.
 
 **Fields:**
 
@@ -251,7 +251,7 @@ Used by Agent Manager to choose personas and docs. This should be lightweight.
 
 ### Embodiment Context
 
-Used by Agent Commenter to write the actual persona comment. This can include full text.
+Used by Commentor to write the actual persona comment. This can include full text.
 
 **Fields:**
 
@@ -285,7 +285,7 @@ The user must specify a person, role, or team tag. Managed handles and tags are 
 1. Explicit persona handle wins
 2. Role/team tag expands to enabled personas with that tag
 3. Disabled or draft personas are ignored
-4. The Agent Manager may cap selected personas for MVP, e.g. max 3
+4. The Manager may cap selected personas for MVP, e.g. max 3
 
 ---
 
@@ -295,14 +295,14 @@ The MVP uses round-based sequential execution rather than true parallel executio
 
 ```text
 Human comment mentions @PersonaAgent @engineering
--> Agent Manager resolves @engineering to [eng1, eng2, eng3]
--> Agent Manager selects context docs from Docs Index
+-> Manager resolves @engineering to [eng1, eng2, eng3]
+-> Manager selects context docs from Docs Index
 -> Worker creates Persona Run with queue [eng1, eng2, eng3]
--> Agent Commenter writes as eng1
+-> Commentor writes as eng1
 -> Worker updates run: turn_count = 1, queue = [eng2, eng3]
--> Agent Commenter writes as eng2
+-> Commentor writes as eng2
 -> Worker updates run: turn_count = 2, queue = [eng3]
--> Agent Commenter writes as eng3
+-> Commentor writes as eng3
 -> Worker updates run: queue = []
 -> Run completes unless another managed handle/tag was intentionally invoked
 ```
@@ -400,9 +400,9 @@ For MVP, the most important tools are:
 5. Build Worker tools for schema setup, docs indexing, persona creation, and run updates
 6. Implement attribution priority and confidence fields
 7. Add Summary + Key Quotes generation for docs
-8. Add Agent Cloner mode to create draft personas from recent owned/contributed docs
-9. Add Agent Manager mode to resolve handles/tags and select context
-10. Add Agent Commenter mode to write one persona comment at a time
+8. Add Cloner mode to create draft personas from recent owned/contributed docs
+9. Add Manager mode to resolve handles/tags and select context
+10. Add Commentor mode to write one persona comment at a time
 11. Enforce max turns and run status through Persona Runs
 
 ---
