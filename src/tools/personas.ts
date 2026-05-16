@@ -26,7 +26,8 @@ export async function resolvePersonas(input: { handles_or_tags: string[]; includ
 	const personas = pages.map(pageToPersona).filter((persona) => {
 		if (!input.include_disabled && (!persona.enabled || !["Enabled", "Needs Review"].includes(persona.syncStatus))) return false;
 		if (requested.has(normalizeToken(persona.handle))) return true;
-		return persona.tags.some((tag) => requested.has(normalizeToken(tag)));
+		if (requested.has(normalizeToken(persona.team))) return true;
+		return false;
 	});
 
 	return {
@@ -219,5 +220,5 @@ function pageToPersona(page: any): PersonaRecord {
 }
 
 function normalizeToken(value: string): string {
-	return value.trim().replace(/^@/, "").toLowerCase();
+	return value.trim().replace(/^[@#]/, "").toLowerCase();
 }

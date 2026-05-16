@@ -12,7 +12,7 @@ The MVP uses a single hand-crafted **Notwin** in Notion, supported by Notion dat
 
 **Persona** - A simulated person or role. Defined by a handle, display name, tags, role, system prompt, source pages, and enabled status.
 
-**Personas** - A Notion database containing all personas. It is the source of truth for handles, tags, prompts, and source pages.
+**Personas** - A Notion database containing all personas. It is the source of truth for handles, teams, prompts, and source pages.
 
 **Docs** - The user-facing Notion database where people create and edit raw company documents.
 
@@ -43,7 +43,7 @@ Responsible for orchestration.
 
 **Responsibilities:**
 
-1. Parse managed `@handles` and `@tags`
+1. Parse managed `#handles` and `#teams`
 2. Resolve matching enabled personas from the Personas
 3. Select relevant context features from the Features
 4. Create or update the Execution
@@ -109,7 +109,7 @@ Responsible for maintaining document metadata. This should be mostly Worker/tool
 
 ```text
 User comment in Notion:
-@Notwin @engineering review this
+@Notwin #engineering review this
         |
         v
 Notwin wakes up in Notion
@@ -117,7 +117,7 @@ Notwin wakes up in Notion
         v
 Manager mode:
 1. Reads Personas
-2. Resolves @engineering to enabled personas
+2. Resolves #engineering to enabled personas
 3. Reads Features metadata
 4. Selects relevant context features
 5. Creates/updates Execution via Worker tools
@@ -148,7 +148,7 @@ User/admin-editable database defining available personas.
 | Handle | Text | Managed mention handle, e.g. `mikewu`, `cto`, `engineering` |
 | Role | Text | Short role description, e.g. `Senior Engineer` |
 | Team | Select | One of `customer`, `sales`, `design`, `marketing`, `engineering`, `executive` |
-| Tags | Multi-select | Managed tags such as `engineering`, `sales`, `leadership`, `cto` |
+| Tags | Multi-select | Descriptive prompt color such as `trust-first`, `plain language`, `launch`, or `App Store` |
 | System Prompt | Text | Persona voice, behavior, judgment, and style instructions |
 | Voice | Text | Aggregated tone and communication style across this persona's source features |
 | Recurring Concerns | Text | Aggregated concerns the persona repeatedly raises across source features |
@@ -271,22 +271,22 @@ Used by Commentor to write the actual persona comment. This can include full tex
 
 ## Triggering
 
-A user starts the flow by mentioning the Notwin and at least one managed handle or tag in a Notion comment.
+A user starts the flow by mentioning the Notwin and at least one managed persona handle or team in a Notion comment. Persona tokens should use `#` because `@` is reserved for Notion mentions.
 
 **Examples:**
 
 ```text
-@Notwin @engineering review this
-@Notwin @mikewu what would Mike push on here?
-@Notwin @cto @sales debate the launch risk
+@Notwin #engineering review this
+@Notwin #mikewu what would Mike push on here?
+@Notwin #cto #sales debate the launch risk
 ```
 
-The user must specify a person, role, or team tag. Managed handles and tags are defined in the Personas.
+The user must specify a person, role, or team tag. Managed handles and teams are defined in the Personas.
 
 **Resolution rules:**
 
 1. Explicit persona handle wins
-2. Role/team tag expands to enabled personas with that tag
+2. Role/team tag expands to enabled personas on that team
 3. Disabled or draft personas are ignored
 4. The Manager may cap selected personas for MVP, e.g. max 3
 
@@ -297,8 +297,8 @@ The user must specify a person, role, or team tag. Managed handles and tags are 
 The MVP uses round-based sequential execution rather than true parallel execution.
 
 ```text
-Human comment mentions @Notwin @engineering
--> Manager resolves @engineering to [eng1, eng2, eng3]
+Human comment mentions @Notwin #engineering
+-> Manager resolves #engineering to [eng1, eng2, eng3]
 -> Manager selects context features from Features
 -> Worker creates Execution with queue [eng1, eng2, eng3]
 -> Commentor writes as eng1
@@ -307,7 +307,7 @@ Human comment mentions @Notwin @engineering
 -> Worker updates run: turn_count = 2, queue = [eng3]
 -> Commentor writes as eng3
 -> Worker updates run: queue = []
--> Run completes unless another managed handle/tag was intentionally invoked
+-> Run completes unless another managed handle/team was intentionally invoked
 ```
 
 This is intentionally linear. Sequential turns are easier to debug, avoid stale-context races, reduce duplicate comments, and make the max-turn cap enforceable.
@@ -326,12 +326,12 @@ A run must stop when any of these are true:
 
 - Execution `Status` is not `active`
 - `Turn Count >= Max Turns`
-- Queue is empty and no managed handle/tag was intentionally invoked again
+- Queue is empty and no managed handle/team was intentionally invoked again
 - All selected personas return `no_action`
 - The run is manually stopped
 - A cooldown is active
 - A duplicate comment/event is detected
-- No matching enabled persona exists for the requested handle or tag
+- No matching enabled persona exists for the requested handle or team
 
 When `Turn Count >= Max Turns`, mark the run `complete` and do not add further comments.
 
@@ -406,7 +406,7 @@ For MVP, the most important tools are:
 6. Implement attribution priority and confidence fields
 7. Add Summary + Quotes generation for docs
 8. Add Cloner mode to create draft personas from recent owned/contributed features
-9. Add Manager mode to resolve handles/tags and select context
+9. Add Manager mode to resolve handles/teams and select context
 10. Add Commentor mode to write one persona comment at a time
 11. Enforce max turns and run status through Executions
 

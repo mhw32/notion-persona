@@ -78,9 +78,9 @@ worker.tool("updateFeatureRow", {
 worker.tool("resolvePersonas", {
 	title: "Resolve Personas",
 	description:
-		"Resolve managed handles or tags from the Personas into enabled personas for a review run.",
+		"Resolve managed handles or teams from the Personas into enabled personas for a review run.",
 	schema: j.object({
-		handles_or_tags: j.array(j.string()).describe("Handles or tags to resolve, with or without @ prefixes."),
+		handles_or_tags: j.array(j.string()).describe("Persona handles or teams to resolve, with or without # or @ prefixes."),
 		include_disabled: j.boolean().describe("Whether to include disabled/draft personas. Usually false.").nullable(),
 	}),
 	execute: executeTool(resolvePersonas),

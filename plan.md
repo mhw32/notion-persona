@@ -16,7 +16,7 @@ Included:
 - One Notion Worker exposing deterministic tools
 - Manual or agent-triggered features indexing
 - Persona creation/refinement from indexed features
-- Comment-driven review flow using managed handles/tags
+- Comment-driven review flow using managed handles/teams
 - Max-turn and execution-status guardrails
 
 Deferred:
@@ -33,7 +33,7 @@ Deferred:
 
 ```text
 Notion comment:
-@Notwin @engineering review this
+@Notwin #engineering review this
         |
         v
 Notwin
@@ -193,7 +193,7 @@ Persona creation flow:
 
 Acceptance criteria:
 
-- `resolvePersonas({ handles_or_tags: ["engineering"] })` returns enabled personas tagged `engineering`.
+- `resolvePersonas({ handles_or_tags: ["engineering"] })` returns enabled personas on team `engineering`.
 - Draft personas are not selected for live runs.
 - Existing persona rows can be refreshed without losing manual edits unless explicitly requested.
 
@@ -229,7 +229,7 @@ State rules:
 - New runs start as `active`.
 - Every persona comment increments `Turn Count`.
 - `Turn Count >= Max Turns` forces `Status = complete`.
-- Queue exhaustion forces `Status = complete` unless another managed handle/tag is intentionally invoked.
+- Queue exhaustion forces `Status = complete` unless another managed handle/team is intentionally invoked.
 - Duplicate processed comment IDs are ignored.
 
 Acceptance criteria:
@@ -252,8 +252,8 @@ Deliverables:
 
 Manager behavior:
 
-1. Require the user to specify at least one managed handle or tag.
-2. Resolve handles/tags through the Personas.
+1. Require the user to specify at least one managed handle or team.
+2. Resolve handles/teams through the Personas.
 3. Cap selected personas for MVP, default max 3.
 4. Select context features using Features metadata:
    - title
@@ -291,16 +291,16 @@ Acceptance criteria:
 Deliverables:
 
 - End-to-end manual run from a Notion comment.
-- Notwin reads the triggering comment, resolves tags, creates a run, and writes persona comments.
+- Notwin reads the triggering comment, resolves handles/teams, creates a run, and writes persona comments.
 
 Happy path:
 
 ```text
 User comments:
-@Notwin @engineering review this
+@Notwin #engineering review this
 
 Notwin:
-1. Resolves @engineering
+1. Resolves #engineering
 2. Selects up to 3 enabled personas
 3. Selects relevant context features
 4. Creates Execution
@@ -339,7 +339,7 @@ manual_stop
 
 Failure handling:
 
-- Invalid handle/tag: no run or `failed` run with reason.
+- Invalid handle/team: no run or `failed` run with reason.
 - Missing database ID: Worker tool returns explicit setup error.
 - Missing source features: persona can still act from prompt + target doc, but run event records degraded context.
 - Max turns exceeded: mark complete.
@@ -373,7 +373,7 @@ Options:
 6. Implement run create/update.
 7. Draft Notwin instructions.
 8. Test Cloner on one person.
-9. Test Manager + Commentor on one doc and one tag.
+9. Test Manager + Commentor on one doc and one team.
 10. Add guardrails and run events.
 
 ## Open Decisions Before Coding
