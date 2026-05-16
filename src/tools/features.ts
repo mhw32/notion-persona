@@ -82,6 +82,10 @@ export async function updateFeatureRow(
 		page_id: string;
 		summary: string | null;
 		quotes: string | null;
+		voice: string | null;
+		concerns: string | null;
+		decision_style: string | null;
+		principles: string | null;
 		tags: string[] | null;
 	},
 	context?: ToolContext,
@@ -96,6 +100,10 @@ export async function updateFeatureRow(
 	const properties: Record<string, unknown> = {};
 	if (input.summary !== null) properties["Summary"] = richText(input.summary);
 	if (input.quotes !== null) properties["Quotes"] = richText(input.quotes);
+	if (input.voice !== null) properties["Voice"] = richText(input.voice);
+	if (input.concerns !== null) properties["Concerns"] = richText(input.concerns);
+	if (input.decision_style !== null) properties["Decision Style"] = richText(input.decision_style);
+	if (input.principles !== null) properties["Principles"] = richText(input.principles);
 	if (input.tags !== null) properties["Tags"] = { multi_select: input.tags.map((name) => ({ name })) };
 
 	await updatePageProperties(notion, row.id, properties);
@@ -120,6 +128,10 @@ async function findFeatureRowBySourcePageId(notion: Record<string, any>, feature
 function buildFeatureProperties(sourcePage: any, existing: any | null, inferred: Attribution) {
 	const existingSummary = existing ? plainText(getProperty(existing, "Summary")) : "";
 	const existingQuotes = existing ? plainText(getProperty(existing, "Quotes")) : "";
+	const existingVoice = existing ? plainText(getProperty(existing, "Voice")) : "";
+	const existingConcerns = existing ? plainText(getProperty(existing, "Concerns")) : "";
+	const existingDecisionStyle = existing ? plainText(getProperty(existing, "Decision Style")) : "";
+	const existingPrinciples = existing ? plainText(getProperty(existing, "Principles")) : "";
 	const existingTags = existing ? ((getProperty(existing, "Tags") as any)?.multi_select ?? []).map((item: { name: string }) => item.name) : [];
 
 	const ownerIds = firstOwner(inferred.ownerIds);
@@ -132,6 +144,10 @@ function buildFeatureProperties(sourcePage: any, existing: any | null, inferred:
 		Tags: { multi_select: existingTags.map((name: string) => ({ name })) },
 		Summary: richText(existingSummary),
 		Quotes: richText(existingQuotes),
+		Voice: richText(existingVoice),
+		Concerns: richText(existingConcerns),
+		"Decision Style": richText(existingDecisionStyle),
+		Principles: richText(existingPrinciples),
 	};
 }
 

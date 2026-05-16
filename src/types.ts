@@ -3,8 +3,13 @@ export type PersonaRecord = {
 	name: string;
 	handle: string;
 	role: string;
+	team: string;
 	tags: string[];
 	systemPrompt: string;
+	voice: string;
+	recurringConcerns: string;
+	decisionStyle: string;
+	principles: string;
 	ownerUserId: string;
 	enabled: boolean;
 	syncStatus: string;
@@ -18,6 +23,10 @@ export type FeatureRecord = {
 	tags: string[];
 	summary: string;
 	quotes: string;
+	voice: string;
+	concerns: string;
+	decisionStyle: string;
+	principles: string;
 };
 
 export type RunRecord = {

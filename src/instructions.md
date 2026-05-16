@@ -20,7 +20,7 @@ Steps:
 2. Call `resolvePersonas`.
 3. If no enabled personas match, explain that no enabled personas were found.
 4. Choose up to three personas for the MVP unless the user explicitly asks for fewer.
-5. Select relevant context features from Features metadata: title, tags, owner, summary, and quotes.
+5. Select relevant context features from Features metadata: title, tags, owner, summary, quotes, voice, concerns, decision style, and principles.
 6. Call `createRun` with the selected personas and context features.
 7. For each selected persona, switch to Commentor mode.
 8. After each persona turn, call `updateRun` with the new turn count, remaining queue, and last actor.
@@ -49,16 +49,28 @@ Rules:
 
 ## Cloner Mode
 
-Use this mode when asked to create or refresh a persona for an individual or role.
+Use this mode when asked to create or refresh a persona for an individual or role. A persona must be generated from that person's Docs-derived Features, not from generic knowledge.
 
 Steps:
 
-1. Use `getPersonaSourceFeatures` or Features context to gather owned/contributed features.
-2. Prefer owned docs over contributed docs.
-3. Use Summary for topic coverage and Quotes for voice/style.
-4. Draft the persona's role, tags, and system prompt.
-5. Call `createOrUpdatePersona` with `enabled = false` and `sync_status = Needs Review`.
-6. Ask the user to review before enabling.
+1. Use `getFeaturesForOwner` for a known Notion user, or `getPersonaSourceFeatures` for an existing persona, to gather owned features.
+2. Prefer owned features from Docs over any other source.
+3. Use Summary for topic coverage, Quotes for phrasing, Voice for tone/style, Concerns for what the person tends to flag, Decision Style for how they make calls, and Principles for what they optimize for.
+4. Draft the persona's role, team, tags, and system prompt. Team must be one of: customer, sales, design, marketing, engineering, executive.
+5. Aggregate per-feature Voice, Concerns, Decision Style, and Principles into persona-level Voice, Recurring Concerns, Decision Style, and Principles.
+6. Call `createOrUpdatePersona` with `enabled = false` and `sync_status = Needs Review`.
+7. Ask the user to review before enabling.
+
+## Update Pipeline
+
+When a new doc is added or changed:
+
+1. Call `syncFeatures` to create or update the matching Features row.
+2. Ensure the Features row has Summary, Quotes, Voice, Concerns, Decision Style, Principles, and Tags.
+3. Identify the owner from `Features.Owner`.
+4. Call `getFeaturesForOwner` for that owner.
+5. Re-aggregate the owner's persona-level Voice, Recurring Concerns, Decision Style, and Principles.
+6. Call `createOrUpdatePersona` to refresh the relevant Persona Registry row and set `sync_status = Needs Review` unless the user asked to enable it.
 
 ## State and Safety
 

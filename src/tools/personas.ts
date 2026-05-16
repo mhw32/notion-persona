@@ -42,8 +42,13 @@ export async function createOrUpdatePersona(
 		handle: string;
 		display_name: string;
 		role: string | null;
+		team: string | null;
 		tags: string[] | null;
 		system_prompt: string | null;
+		voice: string | null;
+		recurring_concerns: string | null;
+		decision_style: string | null;
+		principles: string | null;
 		source_page_ids: string[] | null;
 		enabled: boolean | null;
 		sync_status: string | null;
@@ -86,12 +91,46 @@ export async function getPersonaSourceFeatures(input: { handle: string }, contex
 			name: plainText(getProperty(doc, "Name")),
 			summary: plainText(getProperty(doc, "Summary")),
 			quotes: plainText(getProperty(doc, "Quotes")),
+			voice: plainText(getProperty(doc, "Voice")),
+			concerns: plainText(getProperty(doc, "Concerns")),
+			decision_style: plainText(getProperty(doc, "Decision Style")),
+			principles: plainText(getProperty(doc, "Principles")),
 		}));
 
 	return {
 		ok: true,
 		persona,
 		source_features: relatedDocs,
+	};
+}
+
+export async function getFeaturesForOwner(input: { owner_user_id: string }, context?: ToolContext) {
+	const notion = getNotionClient(context);
+	const config = getConfig();
+	const features = await queryAllCollection(notion, config.featuresDatabaseId, {}, 1000);
+	const ownerFeatures = features
+		.filter((feature) => {
+			const ownerIds = ((getProperty(feature, "Owner") as any)?.people ?? []).map((person: { id: string }) => person.id);
+			return ownerIds.includes(input.owner_user_id);
+		})
+		.map((feature) => ({
+			feature_row_id: feature.id,
+			page_id: plainText(getProperty(feature, "Page ID")),
+			name: plainText(getProperty(feature, "Name")),
+			summary: plainText(getProperty(feature, "Summary")),
+			quotes: plainText(getProperty(feature, "Quotes")),
+			voice: plainText(getProperty(feature, "Voice")),
+			concerns: plainText(getProperty(feature, "Concerns")),
+			decision_style: plainText(getProperty(feature, "Decision Style")),
+			principles: plainText(getProperty(feature, "Principles")),
+			tags: multiSelectValues(getProperty(feature, "Tags")),
+		}));
+
+	return {
+		ok: true,
+		owner_user_id: input.owner_user_id,
+		count: ownerFeatures.length,
+		features: ownerFeatures,
 	};
 }
 
@@ -115,8 +154,13 @@ function buildPersonaProperties(input: Parameters<typeof createOrUpdatePersona>[
 		Name: title(input.display_name),
 		Handle: richText(normalizeToken(input.handle)),
 		Role: richText(input.role ?? ""),
+		Team: select(input.team ?? null),
 		Tags: multiSelect(input.tags ?? []),
 		"System Prompt": longRichText(input.system_prompt ?? ""),
+		Voice: longRichText(input.voice ?? ""),
+		"Recurring Concerns": longRichText(input.recurring_concerns ?? ""),
+		"Decision Style": longRichText(input.decision_style ?? ""),
+		Principles: longRichText(input.principles ?? ""),
 		"Owner User ID": richText(input.owner_user_id ?? ""),
 		Enabled: checkbox(input.enabled ?? false),
 		"Sync Status": select(input.sync_status ?? "Needs Review"),
@@ -130,8 +174,13 @@ function pageToPersona(page: any): PersonaRecord {
 		name: plainText(getProperty(page, "Name")),
 		handle: plainText(getProperty(page, "Handle")),
 		role: plainText(getProperty(page, "Role")),
+		team: selectValue(getProperty(page, "Team")),
 		tags: multiSelectValues(getProperty(page, "Tags")),
 		systemPrompt: plainText(getProperty(page, "System Prompt")),
+		voice: plainText(getProperty(page, "Voice")),
+		recurringConcerns: plainText(getProperty(page, "Recurring Concerns")),
+		decisionStyle: plainText(getProperty(page, "Decision Style")),
+		principles: plainText(getProperty(page, "Principles")),
 		ownerUserId: plainText(getProperty(page, "Owner User ID")),
 		enabled: checkboxValue(getProperty(page, "Enabled")),
 		syncStatus: selectValue(getProperty(page, "Sync Status")),

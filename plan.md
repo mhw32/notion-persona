@@ -126,7 +126,7 @@ Deliverables:
 
 - Implement indexing from the user-facing Docs database into Features. Docs stays minimal and contains raw documents; parsed artifacts belong in Features.
 - Inherit the human-specified `Docs.Owner`.
-- Add summary, quotes, and tags fields, initially manual or Notion-Agent-generated.
+- Add summary, quotes, voice, concerns, decision style, principles, and tags fields, initially manual or Notion-Agent-generated.
 
 Worker tools:
 
@@ -168,6 +168,7 @@ Worker tools:
 resolvePersonas({ handles_or_tags })
 createOrUpdatePersona({ owner_user_id, patch })
 getPersonaSourceFeatures({ handle })
+getFeaturesForOwner({ owner_user_id })
 ```
 
 Persona creation flow:
@@ -178,7 +179,12 @@ Persona creation flow:
    - display name
    - handle
    - role
+   - team
    - tags
+   - voice
+   - recurring concerns
+   - decision style
+   - principles
    - system prompt
    - source pages
 4. Worker writes a Persona Registry row with:

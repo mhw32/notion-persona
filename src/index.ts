@@ -1,7 +1,7 @@
 import { Worker } from "@notionhq/workers";
 import { j } from "@notionhq/workers/schema-builder";
 import { syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
-import { createOrUpdatePersona, getPersonaSourceFeatures, resolvePersonas } from "./tools/personas.js";
+import { createOrUpdatePersona, getFeaturesForOwner, getPersonaSourceFeatures, resolvePersonas } from "./tools/personas.js";
 import { appendRunEvent, createRun, getRunState, updateRun } from "./tools/runs.js";
 import { ensureWorkspaceSchema } from "./tools/schema.js";
 
@@ -46,11 +46,15 @@ worker.tool("suggestAttribution", {
 worker.tool("updateFeatureRow", {
 	title: "Update Features Row",
 	description:
-		"Update editable discovery fields on an existing Features row, such as Summary, Quotes, or Tags.",
+		"Update editable discovery fields on an existing Features row, such as Summary, Quotes, Voice, Concerns, Decision Style, Principles, or Tags.",
 	schema: j.object({
 		page_id: j.string().describe("The source Notion page ID whose Features row should be updated."),
 		summary: j.string().describe("Updated short summary, or null to leave unchanged.").nullable(),
 		quotes: j.string().describe("Updated representative quotes, or null to leave unchanged.").nullable(),
+		voice: j.string().describe("Updated voice/tone description, or null to leave unchanged.").nullable(),
+		concerns: j.string().describe("Updated per-document concerns, risks, or recurring objections, or null to leave unchanged.").nullable(),
+		decision_style: j.string().describe("Updated decision style signals from this document, or null to leave unchanged.").nullable(),
+		principles: j.string().describe("Updated principles or values expressed in this document, or null to leave unchanged.").nullable(),
 		tags: j.array(j.string()).describe("Updated tags, or null to leave unchanged.").nullable(),
 	}),
 	execute: executeTool(updateFeatureRow),
@@ -76,8 +80,16 @@ worker.tool("createOrUpdatePersona", {
 		handle: j.string().describe("Managed persona handle without @, such as mikewu or cto."),
 		display_name: j.string().describe("Display name for the persona."),
 		role: j.string().describe("Short role description, or null if unknown.").nullable(),
+		team: j
+			.string()
+			.describe("Persona team: customer, sales, design, marketing, engineering, or executive. Use null if unknown.")
+			.nullable(),
 		tags: j.array(j.string()).describe("Persona tags, or null for none.").nullable(),
 		system_prompt: j.string().describe("Persona system prompt, or null to leave empty.").nullable(),
+		voice: j.string().describe("Aggregated persona voice/tone, or null to leave empty.").nullable(),
+		recurring_concerns: j.string().describe("Aggregated recurring concerns for this persona, or null to leave empty.").nullable(),
+		decision_style: j.string().describe("Aggregated decision style for this persona, or null to leave empty.").nullable(),
+		principles: j.string().describe("Aggregated principles for this persona, or null to leave empty.").nullable(),
 		source_page_ids: j.array(j.string()).describe("Source page IDs selected for this persona, or null.").nullable(),
 		enabled: j.boolean().describe("Whether this persona can participate in live runs. Drafts should be false.").nullable(),
 		sync_status: j.string().describe("Sync status, such as Needs Review or Enabled.").nullable(),
@@ -94,6 +106,16 @@ worker.tool("getPersonaSourceFeatures", {
 		handle: j.string().describe("Persona handle to inspect."),
 	}),
 	execute: executeTool(getPersonaSourceFeatures),
+});
+
+worker.tool("getFeaturesForOwner", {
+	title: "Get Features For Owner",
+	description:
+		"Return all Features rows owned by a Notion user. Use this after syncing new docs to aggregate persona-level traits.",
+	schema: j.object({
+		owner_user_id: j.string().describe("Notion user ID whose owned features should be returned."),
+	}),
+	execute: executeTool(getFeaturesForOwner),
 });
 
 worker.tool("createRun", {

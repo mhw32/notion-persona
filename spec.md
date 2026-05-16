@@ -89,7 +89,8 @@ Responsible for creating or refreshing persona definitions.
 2. Draft or update a persona system prompt
 3. Choose source pages
 4. Extract voice/style traits
-5. Mark generated personas as `Draft` or `Needs Review` before enabling
+5. Aggregate per-feature Concerns into persona-level Recurring Concerns
+6. Mark generated personas as `Draft` or `Needs Review` before enabling
 
 ### 4. Indexer
 
@@ -146,8 +147,13 @@ User/admin-editable database defining available personas.
 | Name | Title | Display name, e.g. `Mike Wu` or `CTO Persona` |
 | Handle | Text | Managed mention handle, e.g. `mikewu`, `cto`, `engineering` |
 | Role | Text | Short role description, e.g. `Senior Engineer` |
+| Team | Select | One of `customer`, `sales`, `design`, `marketing`, `engineering`, `executive` |
 | Tags | Multi-select | Managed tags such as `engineering`, `sales`, `leadership`, `cto` |
 | System Prompt | Text | Persona voice, behavior, judgment, and style instructions |
+| Voice | Text | Aggregated tone and communication style across this persona's source features |
+| Recurring Concerns | Text | Aggregated concerns the persona repeatedly raises across source features |
+| Decision Style | Text | Aggregated description of how the persona makes decisions |
+| Principles | Text | Aggregated operating principles and values inferred from source features |
 | Source Pages | Relation | Docs used to ground this persona's voice and knowledge |
 | Owner User ID | Text | Notion user ID for attribution and auto-discovery |
 | Enabled | Checkbox | Whether the persona can currently participate |
@@ -175,6 +181,10 @@ Worker-maintained index of documents that personas can use for grounding. Each r
 | Owner | Person | Human-specified owner inherited from `Docs.Owner`; one owner is assumed for MVP |
 | Summary | Text | Short description used for discovery and routing |
 | Quotes | Text | Representative excerpts capturing voice, opinions, and decision style |
+| Voice | Text | Description of the owner's tone, communication style, and recurring voice traits |
+| Concerns | Text | Per-document risks, objections, or issues the owner surfaces |
+| Decision Style | Text | Per-document evidence of how the owner makes decisions |
+| Principles | Text | Per-document values or operating principles expressed by the owner |
 | Tags | Multi-select | Topic, product area, team, or domain tags extracted from the source document |
 
 ### 4. Persona Runs Database
@@ -239,7 +249,7 @@ Used by Manager to choose personas and docs. This should be lightweight.
 - Persona Registry entries
 - Triggering comment
 - Target doc metadata
-- Features metadata: title, owner, tags, summary, quotes
+- Features metadata: title, owner, tags, summary, quotes, voice, concerns, decision style, principles
 
 ### Embodiment Context
 
