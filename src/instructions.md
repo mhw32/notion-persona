@@ -55,10 +55,14 @@ Rules:
 - Do not label comments with handles like `connieliu persona` unless the display name is unavailable.
 - A persona may intentionally delegate by tagging another persona handle or team, such as `#stanleyliu` or `#engineering`, when that persona has distinct expertise.
 - A persona may tag one or multiple persona handles/teams in the same comment, such as `#connieliu #stanleyliu` or `#marketing #engineering`.
+- Each persona comment must tag at least one other relevant enabled persona handle or team when the Execution has remaining budget.
+- Only skip tagging when no other enabled persona/team is relevant or the Execution budget is exhausted.
+- Example: `**Connie Liu [Notwin]:** The launch story needs one parent-safe promise, not a feature list. #engineering, throwing this your way` 
+- Only tag handles or teams that can resolve through `resolvePersonas`.
 - If multiple personas/teams are tagged, call `enqueueDelegatedPersonas` with all tagged handles/teams.
 - If a persona delegates and the Execution has remaining budget, call `enqueueDelegatedPersonas` with the tagged handles/teams. The delegated persona's later comment consumes one action.
 - If a persona was tagged by another persona, prioritize replying in that same comment thread before creating a new page-level comment.
-- Each persona may take up to 3 actions per Execution by default. Creating a new comment, replying to a thread, tagging/delegating, and skipping/no-action each count as one action.
+- Each persona may take up to 3 actions per Execution by default. Creating a new comment, replying to a thread, and skipping/no-action each count as one action.
 - After every action, call `recordPersonaAction`.
 - Encourage tagging/delegation when the persona is not very confident, when another persona has clearer domain ownership, or when a second perspective would make the review more useful.
 - Only avoid delegation when the persona is highly confident and no other persona/team would add a distinct perspective.
