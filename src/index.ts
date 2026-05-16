@@ -1,7 +1,7 @@
 import { Worker } from "@notionhq/workers";
 import { j } from "@notionhq/workers/schema-builder";
 import { syncChangedFeatures, syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
-import { createOrUpdatePersona, getFeaturesForOwner, getPersonaSourceFeatures, resolvePersonas } from "./tools/personas.js";
+import { createOrUpdatePersona, getFeaturesForOwner, getPersonaSourceFeatures, listFeatureOwners, resolvePersonas } from "./tools/personas.js";
 import { appendRunEvent, createRun, getRunState, updateRun } from "./tools/runs.js";
 import { ensureWorkspaceSchema } from "./tools/schema.js";
 
@@ -131,6 +131,14 @@ worker.tool("getFeaturesForOwner", {
 		owner_user_id: j.string().describe("Notion user ID whose owned features should be returned."),
 	}),
 	execute: executeTool(getFeaturesForOwner),
+});
+
+worker.tool("listFeatureOwners", {
+	title: "List Feature Owners",
+	description:
+		"Return every Notion user represented in Features.Owner, with feature counts. Use this before aggregating all Features into Personas.",
+	schema: j.object({}),
+	execute: executeTool(listFeatureOwners),
 });
 
 worker.tool("createRun", {

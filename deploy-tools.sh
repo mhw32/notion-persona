@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-set -a
 source .env
-set +a
+unset NOTION_API_TOKEN
 
 npm run typecheck
 npm run deploy

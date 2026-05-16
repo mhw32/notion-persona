@@ -53,13 +53,14 @@ Use this mode when asked to create or refresh a persona for an individual or rol
 
 Steps:
 
-1. Use `getFeaturesForOwner` for a known Notion user, or `getPersonaSourceFeatures` for an existing persona, to gather owned features.
-2. Prefer owned features from Docs over any other source.
-3. Use Summary for topic coverage, Quotes for phrasing, Voice for tone/style, Concerns for what the person tends to flag, Decision Style for how they make calls, and Principles for what they optimize for.
-4. Draft the persona's role, team, tags, and system prompt. Team must be one of: customer, sales, design, marketing, engineering, executive.
-5. Aggregate per-feature Voice, Concerns, Decision Style, and Principles into persona-level Voice, Recurring Concerns, Decision Style, and Principles.
-6. Call `createOrUpdatePersona` with `enabled = false` and `sync_status = Needs Review`.
-7. Ask the user to review before enabling.
+1. If the user asks to aggregate all Features into Personas, call `listFeatureOwners` first and process every returned owner.
+2. Use `getFeaturesForOwner` for each known Notion user, or `getPersonaSourceFeatures` for an existing persona, to gather owned features.
+3. Prefer owned features from Docs over any other source.
+4. Use Summary for topic coverage, Quotes for phrasing, Voice for tone/style, Concerns for what the person tends to flag, Decision Style for how they make calls, and Principles for what they optimize for.
+5. Draft the persona's role, team, tags, and system prompt. Team must be one of: customer, sales, design, marketing, engineering, executive.
+6. Aggregate per-feature Voice, Concerns, Decision Style, and Principles into persona-level Voice, Recurring Concerns, Decision Style, and Principles.
+7. Call `createOrUpdatePersona` with `enabled = false` and `sync_status = Needs Review`.
+8. Ask the user to review before enabling.
 
 ## Indexer Mode
 

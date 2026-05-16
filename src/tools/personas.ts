@@ -134,6 +134,37 @@ export async function getFeaturesForOwner(input: { owner_user_id: string }, cont
 	};
 }
 
+export async function listFeatureOwners(_input: Record<string, never>, context?: ToolContext) {
+	const notion = getNotionClient(context);
+	const config = getConfig();
+	const features = await queryAllCollection(notion, config.featuresDatabaseId, {}, 1000);
+	const ownersById = new Map<string, { id: string; name: string; feature_count: number }>();
+
+	for (const feature of features) {
+		const owners = ((getProperty(feature, "Owner") as any)?.people ?? []) as Array<{ id: string; name?: string }>;
+		for (const owner of owners) {
+			const existing = ownersById.get(owner.id);
+			if (existing) {
+				existing.feature_count += 1;
+			} else {
+				ownersById.set(owner.id, {
+					id: owner.id,
+					name: owner.name ?? owner.id,
+					feature_count: 1,
+				});
+			}
+		}
+	}
+
+	const owners = [...ownersById.values()].sort((a, b) => b.feature_count - a.feature_count || a.name.localeCompare(b.name));
+
+	return {
+		ok: true,
+		count: owners.length,
+		owners,
+	};
+}
+
 async function findPersonaByHandle(notion: Record<string, any>, databaseId: string, handle: string) {
 	const rows = await queryAllCollection(
 		notion,
