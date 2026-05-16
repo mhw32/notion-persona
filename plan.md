@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build the MVP described in [spec.md](./spec.md): one Notion-native Persona Agent backed by Notion databases and Notion Worker tools. The MVP should let a user invoke personas from a Notion comment, select matching personas from the registry, choose relevant context from indexed docs, write persona-style comments, and record run state in Notion.
+Build the MVP described in [spec.md](./spec.md): one Notion-native Notwin backed by Notion databases and Notion Worker tools. The MVP should let a user invoke personas from a Notion comment, select matching personas from the registry, choose relevant context from indexed docs, write persona-style comments, and record run state in Notion.
 
 ## MVP Scope
 
@@ -11,7 +11,7 @@ Included:
 - Persona Registry database
 - Source Docs / Docs Index database
 - Persona Runs database
-- One hand-crafted Notion Persona Agent
+- One hand-crafted Notion Agent
 - One Notion Worker exposing deterministic tools
 - Manual or agent-triggered docs indexing
 - Persona creation/refinement from indexed docs
@@ -32,10 +32,10 @@ Deferred:
 
 ```text
 Notion comment:
-@PersonaAgent @engineering review this
+@Notwin @engineering review this
         |
         v
-Persona Agent
+Notwin
         |
         | calls tools
         v
@@ -177,9 +177,9 @@ getPersonaSourceDocs({ handle })
 
 Persona creation flow:
 
-1. Persona Agent asks Worker for docs owned/contributed by a person.
-2. Persona Agent reads summaries, key quotes, and selected full docs.
-3. Persona Agent drafts:
+1. Notwin asks Worker for docs owned/contributed by a person.
+2. Notwin reads summaries, key quotes, and selected full docs.
+3. Notwin drafts:
    - display name
    - handle
    - role
@@ -238,11 +238,11 @@ Acceptance criteria:
 - Completed runs are not accidentally resumed.
 - Manual `manual_stop` prevents further turns.
 
-## Phase 5 - Persona Agent Instructions
+## Phase 5 - Notwin Instructions
 
 Deliverables:
 
-- Write the hand-crafted Notion Persona Agent instructions.
+- Write the hand-crafted Notion Agent instructions.
 - Define three operating modes:
   - Manager
   - Commentor
@@ -269,7 +269,7 @@ Commentor behavior:
 1. Read persona system prompt.
 2. Read target doc and selected docs.
 3. Write one concise, grounded comment in that persona's voice.
-4. Prefix or label the comment clearly, since comments may appear as the Persona Agent.
+4. Prefix or label the comment clearly, since comments may appear as Notwin.
 5. Update run state after each comment.
 
 Cloner behavior:
@@ -281,9 +281,9 @@ Cloner behavior:
 
 Acceptance criteria:
 
-- Persona Agent can explain which personas it selected and why.
-- Persona Agent creates or updates a run before writing persona comments.
-- Persona Agent updates the run after each comment.
+- Notwin can explain which personas it selected and why.
+- Notwin creates or updates a run before writing persona comments.
+- Notwin updates the run after each comment.
 - Persona comments are clearly attributed to simulated personas.
 
 ## Phase 6 - Comment Workflow MVP
@@ -291,15 +291,15 @@ Acceptance criteria:
 Deliverables:
 
 - End-to-end manual run from a Notion comment.
-- Persona Agent reads the triggering comment, resolves tags, creates a run, and writes persona comments.
+- Notwin reads the triggering comment, resolves tags, creates a run, and writes persona comments.
 
 Happy path:
 
 ```text
 User comments:
-@PersonaAgent @engineering review this
+@Notwin @engineering review this
 
-Persona Agent:
+Notwin:
 1. Resolves @engineering
 2. Selects up to 3 enabled personas
 3. Selects relevant context docs
@@ -320,7 +320,7 @@ Acceptance criteria:
 Deliverables:
 
 - Add simple run event logging.
-- Add validation around Persona Agent tool calls.
+- Add validation around Notwin tool calls.
 - Add failure states.
 
 Suggested `appendRunEvent` event types:
@@ -348,7 +348,7 @@ Acceptance criteria:
 
 - Every run has enough state to debug from Notion alone.
 - Failures are visible in Persona Runs.
-- Worker tools return structured errors that the Persona Agent can explain.
+- Worker tools return structured errors that Notwin can explain.
 
 ## Phase 8 - Optional Automation
 
@@ -371,7 +371,7 @@ Options:
 4. Implement Docs Index sync.
 5. Implement persona lookup.
 6. Implement run create/update.
-7. Draft Persona Agent instructions.
+7. Draft Notwin instructions.
 8. Test Cloner on one person.
 9. Test Manager + Commentor on one doc and one tag.
 10. Add guardrails and run events.
@@ -379,7 +379,7 @@ Options:
 ## Open Decisions Before Coding
 
 - Should the Worker create the Notion databases, or will they be created manually first?
-- Should Persona Agent comments be written directly by the Notion Agent, or through a Worker tool for uniform logging?
+- Should Notwin comments be written directly by the Notion Agent, or through a Worker tool for uniform logging?
 - What is the initial persona cap per run: 2 or 3?
 - What exact Notion source database should be indexed first?
-- Are Summary and Key Quotes generated by Persona Agent initially, or manually filled for seed docs?
+- Are Summary and Key Quotes generated by Notwin initially, or manually filled for seed docs?

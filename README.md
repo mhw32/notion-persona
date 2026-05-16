@@ -6,7 +6,7 @@ Persona Agents for the Notion Developer Hackathon.
 
 This MVP is not a web app. It is a Notion-native system made of:
 
-- one hand-crafted Notion Agent: **Persona Agent**
+- one hand-crafted Notion Agent: **Notwin**
 - one TypeScript Notion Worker exposing Agent tools
 - three Notion databases:
   - Persona Registry
@@ -20,7 +20,7 @@ The Notion Agent does the reasoning and writing. The Worker provides determinist
 ```text
 src/index.ts                         Worker entrypoint and tool registration
 src/tools/                           Worker tool implementations
-src/instructions.md                  Instructions for the Notion Persona Agent
+src/instructions.md                  Instructions for Notwin
 spec.md                              Technical spec
 plan.md                              Implementation plan
 .env.template                        Required local environment variables
@@ -83,8 +83,8 @@ npm run exec -- resolvePersonas -d '{"handles_or_tags":["engineering"],"include_
 npm run deploy
 ```
 
-After deploy, attach the Worker tools to the Notion Persona Agent and paste the instructions from `src/instructions.md` into the agent configuration.
+After deploy, attach the Worker tools to the Notion Agent and paste the instructions from `src/instructions.md` into the agent configuration.
 
 ## Current Assumption
 
-Manager, Commentor, and Cloner are implemented as modes of a single Notion Persona Agent. The Worker does not require separate Notion Agent IDs. If those roles are split into separate native Notion Agents later, add optional agent IDs/URLs to configuration and the Persona Registry.
+Manager, Commentor, and Cloner are implemented as modes of a single Notion Agent. The Worker does not require separate Notion Agent IDs. If those roles are split into separate native Notion Agents later, add optional agent IDs/URLs to configuration and the Persona Registry.

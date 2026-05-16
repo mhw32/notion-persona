@@ -87,7 +87,7 @@ worker.tool("createOrUpdatePersona", {
 worker.tool("getPersonaSourceDocs", {
 	title: "Get Persona Source Docs",
 	description:
-		"Return Docs Index rows owned or contributed by a persona's owner user ID so the Persona Agent can draft or refresh persona prompts.",
+		"Return Docs Index rows owned or contributed by a persona's owner user ID so the Notwin can draft or refresh persona prompts.",
 	schema: j.object({
 		handle: j.string().describe("Persona handle to inspect."),
 	}),

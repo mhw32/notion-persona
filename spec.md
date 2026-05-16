@@ -4,7 +4,7 @@
 
 Notion Personas is a Notion-native multi-agent system that creates AI-powered digital twins of workspace members. Personas are grounded in each person's actual Notion content and can review documents, leave comments, and simulate debate in Notion comment threads.
 
-The MVP uses a single hand-crafted **Persona Agent** in Notion, supported by Notion databases and Notion Worker tools. The Persona Agent handles reasoning, persona selection, context selection, persona cloning, and comment drafting. The Worker handles deterministic operations such as database setup, indexing, run-state updates, locking, idempotency, and schema maintenance.
+The MVP uses a single hand-crafted **Notwin** in Notion, supported by Notion databases and Notion Worker tools. Notwin handles reasoning, persona selection, context selection, persona cloning, and comment drafting. The Worker handles deterministic operations such as database setup, indexing, run-state updates, locking, idempotency, and schema maintenance.
 
 ---
 
@@ -18,15 +18,15 @@ The MVP uses a single hand-crafted **Persona Agent** in Notion, supported by Not
 
 **Persona Run** - A persisted review/debate session for a page or comment thread. Stores status, selected personas, context docs, turn count, queue, processed comments, and stop conditions.
 
-**Persona Agent** - The single Notion Agent used by humans. It acts as Manager, Commentor, and Cloner depending on the task.
+**Notwin** - The single Notion Agent used by humans. It acts as Manager, Commentor, and Cloner depending on the task.
 
-**Notion Worker** - A Notion-hosted TypeScript backend used by the Persona Agent for deterministic tools: indexing docs, updating databases, enforcing run state, and maintaining schemas.
+**Notion Worker** - A Notion-hosted TypeScript backend used by the Notwin for deterministic tools: indexing docs, updating databases, enforcing run state, and maintaining schemas.
 
 ---
 
 ## Agent Roles
 
-These are conceptual roles. For MVP, they can all be implemented as capabilities of one Notion Agent called **Persona Agent**.
+These are conceptual roles. For MVP, they can all be implemented as capabilities of one Notion Agent called **Notwin**.
 
 ### 1. Manager
 
@@ -107,10 +107,10 @@ Responsible for maintaining document metadata. This should be mostly Worker/tool
 
 ```text
 User comment in Notion:
-@PersonaAgent @engineering review this
+@Notwin @engineering review this
         |
         v
-Persona Agent wakes up in Notion
+Notwin wakes up in Notion
         |
         v
 Manager mode:
@@ -130,7 +130,7 @@ Commentor mode:
 Stop when queue is empty, no persona acts, max turns reached, or run is manually completed
 ```
 
-The Worker is not the primary reasoning layer in this MVP. It provides tools and guardrails for the Persona Agent.
+The Worker is not the primary reasoning layer in this MVP. It provides tools and guardrails for Notwin.
 
 ---
 
@@ -268,14 +268,14 @@ Used by Commentor to write the actual persona comment. This can include full tex
 
 ## Triggering
 
-A user starts the flow by mentioning the Persona Agent and at least one managed handle or tag in a Notion comment.
+A user starts the flow by mentioning the Notwin and at least one managed handle or tag in a Notion comment.
 
 **Examples:**
 
 ```text
-@PersonaAgent @engineering review this
-@PersonaAgent @mikewu what would Mike push on here?
-@PersonaAgent @cto @sales debate the launch risk
+@Notwin @engineering review this
+@Notwin @mikewu what would Mike push on here?
+@Notwin @cto @sales debate the launch risk
 ```
 
 The user must specify a person, role, or team tag. Managed handles and tags are defined in the Persona Registry.
@@ -294,7 +294,7 @@ The user must specify a person, role, or team tag. Managed handles and tags are 
 The MVP uses round-based sequential execution rather than true parallel execution.
 
 ```text
-Human comment mentions @PersonaAgent @engineering
+Human comment mentions @Notwin @engineering
 -> Manager resolves @engineering to [eng1, eng2, eng3]
 -> Manager selects context docs from Docs Index
 -> Worker creates Persona Run with queue [eng1, eng2, eng3]
@@ -338,7 +338,7 @@ When all personas in a round return `no_action`, mark the run `complete`.
 
 ## Notion Worker Tools
 
-The Persona Agent should call Worker tools for deterministic operations.
+Notwin should call Worker tools for deterministic operations.
 
 **Suggested tools:**
 
@@ -381,7 +381,7 @@ For MVP, the most important tools are:
 
 | Layer | Technology |
 | --- | --- |
-| User-facing agent | Notion Agent: Persona Agent |
+| User-facing agent | Notion Agent: Notwin |
 | Deterministic backend | Notion Workers (TypeScript) |
 | Persona storage | Persona Registry Notion database |
 | Document index | Source Docs / Docs Index Notion database |
@@ -393,7 +393,7 @@ For MVP, the most important tools are:
 
 ## MVP Implementation Notes
 
-1. Create one hand-crafted Notion Agent: `Persona Agent`
+1. Create one hand-crafted Notion Agent: `Notwin`
 2. Create Persona Registry DB
 3. Create Source Docs / Docs Index DB
 4. Create Persona Runs DB
@@ -409,7 +409,7 @@ For MVP, the most important tools are:
 
 ## Open Questions
 
-- Should the Persona Agent create comments directly, or should it call a Worker tool to create comments so all writes are logged uniformly?
+- Should Notwin create comments directly, or should it call a Worker tool to create comments so all writes are logged uniformly?
 - Should a run be scoped to the whole page, the root comment, or a specific discussion thread?
 - What is the initial max number of personas per run: 2, 3, or more?
 - How often should summaries, key quotes, and persona prompts be refreshed?
