@@ -9,7 +9,8 @@ Build the MVP described in [spec.md](./spec.md): one Notion-native Notwin backed
 Included:
 
 - Persona Registry database
-- Source Docs / Docs Index database
+- Docs database
+- Docs Index database
 - Persona Runs database
 - One hand-crafted Notion Agent
 - One Notion Worker exposing deterministic tools
@@ -43,8 +44,9 @@ Notion Worker
         |
         v
 Notion databases:
+- Docs
 - Persona Registry
-- Source Docs / Docs Index
+- Docs Index
 - Persona Runs
 ```
 
@@ -76,6 +78,7 @@ Environment variables:
 
 ```text
 NOTION_TOKEN
+DOCS_DATABASE_ID
 PERSONA_REGISTRY_DATABASE_ID
 DOCS_INDEX_DATABASE_ID
 PERSONA_RUNS_DATABASE_ID
@@ -91,9 +94,10 @@ Acceptance criteria:
 
 Deliverables:
 
-- Create the three Notion databases manually or with a setup tool:
+- Create the four Notion databases manually or with a setup tool:
+  - Docs
   - Persona Registry
-  - Source Docs / Docs Index
+  - Docs Index
   - Persona Runs
 - Store database IDs in Worker environment variables.
 - Add a Worker tool to verify required schema fields.
@@ -106,7 +110,7 @@ ensureWorkspaceSchema({})
 
 Expected behavior:
 
-- Fetch all three databases.
+- Fetch all four databases.
 - Validate required properties exist.
 - Return missing properties with suggested fixes.
 - Optionally add missing properties where Notion API support permits.
@@ -120,7 +124,7 @@ Acceptance criteria:
 
 Deliverables:
 
-- Implement indexing from an existing Notion source database into Source Docs / Docs Index.
+- Implement indexing from the user-facing Docs database into Docs Index. Docs stays minimal and contains raw documents; parsed artifacts belong in Docs Index.
 - Add attribution inference.
 - Add summary and key quote fields, initially manual or Notion-Agent-generated.
 
@@ -144,8 +148,8 @@ Indexing behavior:
    - last edited by
    - last edited time
 4. Apply attribution priority:
-   - manual Owner
-   - manual Contributors
+   - `Docs.Owner`, assumed to be one human-specified owner and copied to `Docs Index.Owner`
+   - existing `Docs Index.Owner`
    - Created By
    - Last Edited By
    - commenters/mentions later
@@ -155,7 +159,7 @@ Indexing behavior:
 Acceptance criteria:
 
 - Running `syncDocsIndex` twice is idempotent.
-- Existing manual Owner/Contributors values are not overwritten.
+- `Docs.Owner` is inherited into `Docs Index.Owner` as high-confidence attribution.
 - Rows with inferred owners show attribution source and confidence.
 - Missing or ambiguous attribution is visible through `Needs Review`.
 
@@ -360,7 +364,7 @@ Options:
 - Worker sync job to refresh Docs Index.
 - Run Events database as append-only logs instead of serialized run text.
 - Automatic stale persona detection.
-- Slack import into Source Docs.
+- Slack import into Docs.
 - Two-phase persona rounds for more simultaneous debates.
 
 ## Implementation Order

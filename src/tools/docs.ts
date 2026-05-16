@@ -25,12 +25,13 @@ import {
 type ToolContext = { notion?: Record<string, any> };
 
 export async function syncDocsIndex(
-	input: { data_source_id: string; limit: number | null; dry_run: boolean | null },
+	input: { data_source_id: string | null; limit: number | null; dry_run: boolean | null },
 	context?: ToolContext,
 ) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
-	const sourcePages = await queryAllCollection(notion, input.data_source_id, {}, input.limit ?? 100);
+	const sourceId = input.data_source_id || config.docsDatabaseId;
+	const sourcePages = await queryAllCollection(notion, sourceId, {}, input.limit ?? 100);
 	const existingRows = await queryAllCollection(notion, config.docsIndexDatabaseId, {}, 1000);
 	const existingBySourcePageId = new Map<string, any>();
 
@@ -63,6 +64,7 @@ export async function syncDocsIndex(
 
 	return {
 		ok: true,
+		source_database_id: sourceId,
 		source_count: sourcePages.length,
 		changes,
 	};
@@ -127,7 +129,6 @@ async function findDocsIndexRowBySourcePageId(notion: Record<string, any>, docsI
 }
 
 function buildDocsIndexProperties(sourcePage: any, existing: any | null, inferred: Attribution) {
-	const existingOwnerIds = existing ? peopleIds(getProperty(existing, "Owner")) : [];
 	const existingContributorIds = existing ? peopleIds(getProperty(existing, "Contributors")) : [];
 	const existingSummary = existing ? plainText(getProperty(existing, "Summary")) : "";
 	const existingKeyQuotes = existing ? plainText(getProperty(existing, "Key Quotes")) : "";
@@ -135,7 +136,7 @@ function buildDocsIndexProperties(sourcePage: any, existing: any | null, inferre
 	const existingContentType = existing ? selectValue(getProperty(existing, "Content Type")) : "";
 	const existingPersonaEnabled = existing ? checkboxValue(getProperty(existing, "Persona Enabled")) : true;
 
-	const ownerIds = existingOwnerIds.length > 0 ? existingOwnerIds : inferred.ownerIds;
+	const ownerIds = firstOwner(inferred.ownerIds);
 	const contributorIds = unique([...existingContributorIds, ...inferred.contributorIds]);
 
 	return {
@@ -149,9 +150,9 @@ function buildDocsIndexProperties(sourcePage: any, existing: any | null, inferre
 		"Key Quotes": richText(existingKeyQuotes),
 		"Content Type": select(existingContentType || "Spec"),
 		"Persona Enabled": checkbox(existingPersonaEnabled),
-		"Attribution Source": select(existingOwnerIds.length > 0 ? "Manual" : inferred.source),
-		"Attribution Confidence": select(existingOwnerIds.length > 0 ? "High" : inferred.confidence),
-		"Needs Review": checkbox(existingOwnerIds.length === 0 && inferred.needsReview),
+		"Attribution Source": select(inferred.source),
+		"Attribution Confidence": select(inferred.confidence),
+		"Needs Review": checkbox(inferred.needsReview),
 		"Last Indexed At": date(new Date().toISOString()),
 		"Created By": people(sourcePage.created_by?.id ? [sourcePage.created_by.id] : []),
 		"Created Time": date(sourcePage.created_time),
@@ -170,6 +171,19 @@ type Attribution = {
 };
 
 function inferAttribution(sourcePage: any, existing: any | null): Attribution {
+	const sourceOwnerIds = firstOwner(peopleIds(getProperty(sourcePage, "Owner")));
+	if (sourceOwnerIds.length > 0) {
+		const lastEditedBy = sourcePage.last_edited_by?.id;
+		return {
+			ownerIds: sourceOwnerIds,
+			contributorIds: unique([lastEditedBy].filter(Boolean)),
+			source: "Owner",
+			confidence: "High",
+			needsReview: false,
+			reason: "Docs.Owner is present; using the human-specified document owner.",
+		};
+	}
+
 	const existingOwnerIds = existing ? peopleIds(getProperty(existing, "Owner")) : [];
 	const existingContributorIds = existing ? peopleIds(getProperty(existing, "Contributors")) : [];
 	if (existingOwnerIds.length > 0) {
@@ -210,4 +224,8 @@ function inferAttribution(sourcePage: any, existing: any | null): Attribution {
 
 function unique<T>(values: T[]): T[] {
 	return [...new Set(values)];
+}
+
+function firstOwner(ids: string[]): string[] {
+	return ids.length > 0 ? [ids[0]] : [];
 }

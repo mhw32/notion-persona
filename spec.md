@@ -14,7 +14,9 @@ The MVP uses a single hand-crafted **Notwin** in Notion, supported by Notion dat
 
 **Persona Registry** - A Notion database containing all personas. It is the source of truth for handles, tags, prompts, and source pages.
 
-**Source Docs / Docs Index** - A Notion database of documents the system can use as grounding material. Each row includes attribution metadata, summary, key quotes, and indexing fields.
+**Docs** - The user-facing Notion database where people create and edit raw company documents.
+
+**Docs Index** - A Worker-maintained Notion database that maps one-to-one to source documents in Docs or other future sources. Each row includes attribution metadata, summary, key quotes, and indexing fields used for routing and grounding.
 
 **Persona Run** - A persisted review/debate session for a page or comment thread. Stores status, selected personas, context docs, turn count, queue, processed comments, and stop conditions.
 
@@ -36,7 +38,7 @@ Responsible for orchestration.
 
 - Triggering comment
 - Persona Registry
-- Source Docs / Docs Index
+- Docs Index
 - Persona Runs
 
 **Responsibilities:**
@@ -153,9 +155,18 @@ User/admin-editable database defining available personas.
 | Sync Status | Select | `Draft`, `Needs Review`, `Enabled`, `Stale`, or `Disabled` |
 | Notion Agent URL | URL | Optional link to a native Notion Agent if one exists later |
 
-### 2. Source Docs / Docs Index Database
+### 2. Docs Database
 
-User-editable and Worker-maintained database of documents that personas can use for grounding.
+User-facing database where people create and edit raw company documents. It intentionally stays minimal; parsed and inferred artifacts live in Docs Index.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| Name | Title | Document title |
+| Owner | Person | Human-specified document owner. Exactly one owner is assumed for MVP. This is copied into Docs Index as the strongest attribution signal. |
+
+### 3. Docs Index Database
+
+Worker-maintained index of documents that personas can use for grounding. Each row maps one-to-one to a source document row in Docs for the MVP.
 
 | Property | Type | Description |
 | --- | --- | --- |
@@ -178,7 +189,7 @@ User-editable and Worker-maintained database of documents that personas can use 
 | Last Edited By | Person | Notion metadata copied from the source page |
 | Last Edited Time | Date | Notion metadata copied from the source page |
 
-### 3. Persona Runs Database
+### 4. Persona Runs Database
 
 Mostly system-owned database representing active and historical review/debate sessions.
 
@@ -203,12 +214,12 @@ Mostly system-owned database representing active and historical review/debate se
 
 ## Attribution Rules
 
-Document attribution is a scored, editable guess. The system should never pretend inferred ownership is perfect.
+Document attribution is a scored, editable guess, except when a human has set `Docs.Owner`. For MVP, each raw doc is assumed to have exactly one human-specified owner.
 
 **Priority order:**
 
-1. Manual `Owner`
-2. Manual `Contributors`
+1. `Docs.Owner`
+2. Existing `Docs Index.Owner`
 3. `Created By`
 4. `Last Edited By`
 5. Commenters and mentions
@@ -217,9 +228,16 @@ Document attribution is a scored, editable guess. The system should never preten
 **MVP logic:**
 
 ```text
-If Owner exists:
-  owner = Owner
+If Docs.Owner exists:
+  owner = first(Docs.Owner)
   confidence = High
+  attribution_source = Owner
+  needs_review = false
+else if Docs Index.Owner exists:
+  owner = first(Docs Index.Owner)
+  confidence = High
+  attribution_source = Manual
+  needs_review = false
 else if Created By exists:
   owner = Created By
   confidence = Medium
@@ -229,7 +247,7 @@ else:
   confidence = Low
   needs_review = true
 
-contributors = unique(Contributors + Last Edited By + commenters)
+contributors = unique(Docs Index.Contributors + Last Edited By + commenters)
 ```
 
 ---
@@ -384,7 +402,8 @@ For MVP, the most important tools are:
 | User-facing agent | Notion Agent: Notwin |
 | Deterministic backend | Notion Workers (TypeScript) |
 | Persona storage | Persona Registry Notion database |
-| Document index | Source Docs / Docs Index Notion database |
+| User-facing documents | Docs Notion database |
+| Document index | Docs Index Notion database |
 | Run state | Persona Runs Notion database |
 | Workspace I/O | Notion API / Notion SDK / Worker tools |
 | Reasoning | Notion Agent runtime for MVP; external LLM API optional later |
@@ -394,9 +413,10 @@ For MVP, the most important tools are:
 ## MVP Implementation Notes
 
 1. Create one hand-crafted Notion Agent: `Notwin`
-2. Create Persona Registry DB
-3. Create Source Docs / Docs Index DB
-4. Create Persona Runs DB
+2. Create Docs DB
+3. Create Persona Registry DB
+4. Create Docs Index DB
+5. Create Persona Runs DB
 5. Build Worker tools for schema setup, docs indexing, persona creation, and run updates
 6. Implement attribution priority and confidence fields
 7. Add Summary + Key Quotes generation for docs
@@ -413,5 +433,5 @@ For MVP, the most important tools are:
 - Should a run be scoped to the whole page, the root comment, or a specific discussion thread?
 - What is the initial max number of personas per run: 2, 3, or more?
 - How often should summaries, key quotes, and persona prompts be refreshed?
-- Should third-party sources like Slack be imported into the same Source Docs DB or a separate source-specific DB?
+- Should third-party sources like Slack be imported into the same Docs DB or a separate source-specific DB?
 - If Notion exposes programmable Agent Library APIs later, should Persona Registry sync into native Notion Agents?

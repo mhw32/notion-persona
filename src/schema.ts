@@ -11,6 +11,11 @@ export const PERSONA_REGISTRY_PROPERTIES = [
 	"Notion Agent URL",
 ] as const;
 
+export const DOCS_PROPERTIES = [
+	"Name",
+	"Owner",
+] as const;
+
 export const DOCS_INDEX_PROPERTIES = [
 	"Name",
 	"Page ID",
@@ -50,6 +55,7 @@ export const PERSONA_RUNS_PROPERTIES = [
 ] as const;
 
 export const REQUIRED_SCHEMAS = {
+	docs: DOCS_PROPERTIES,
 	personaRegistry: PERSONA_REGISTRY_PROPERTIES,
 	docsIndex: DOCS_INDEX_PROPERTIES,
 	personaRuns: PERSONA_RUNS_PROPERTIES,

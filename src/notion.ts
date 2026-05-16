@@ -13,7 +13,11 @@ export function getNotionClient(context: { notion?: NotionClient } | undefined):
 
 export async function retrieveCollection(notion: NotionClient, id: string): Promise<any> {
 	if (notion.dataSources?.retrieve) {
-		return notion.dataSources.retrieve({ data_source_id: id });
+		try {
+			return await notion.dataSources.retrieve({ data_source_id: id });
+		} catch (error) {
+			if (!notion.databases?.retrieve) throw error;
+		}
 	}
 	return notion.databases.retrieve({ database_id: id });
 }
@@ -24,7 +28,11 @@ export async function queryCollection(
 	args: Record<string, unknown> = {},
 ): Promise<{ results: any[]; has_more: boolean; next_cursor: string | null }> {
 	if (notion.dataSources?.query) {
-		return notion.dataSources.query({ data_source_id: id, ...args });
+		try {
+			return await notion.dataSources.query({ data_source_id: id, ...args });
+		} catch (error) {
+			if (!notion.databases?.query) throw error;
+		}
 	}
 	return notion.databases.query({ database_id: id, ...args });
 }

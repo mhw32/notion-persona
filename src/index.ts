@@ -13,7 +13,7 @@ const executeTool = <T extends (...args: any[]) => any>(fn: T) => fn as any;
 worker.tool("ensureWorkspaceSchema", {
 	title: "Ensure Workspace Schema",
 	description:
-		"Validate that the Persona Registry, Docs Index, and Persona Runs databases have the properties required by the Notion Personas MVP.",
+		"Validate that the Docs, Persona Registry, Docs Index, and Persona Runs databases have the properties required by the Notion Personas MVP.",
 	schema: j.object({}),
 	execute: executeTool(ensureWorkspaceSchema),
 });
@@ -21,9 +21,12 @@ worker.tool("ensureWorkspaceSchema", {
 worker.tool("syncDocsIndex", {
 	title: "Sync Docs Index",
 	description:
-		"Index pages from a Notion source database into the Docs Index database. Use this when setting up or refreshing persona source documents.",
+		"Index pages from the user-facing Docs database, or another Notion source database, into the Worker-maintained Docs Index database.",
 	schema: j.object({
-		data_source_id: j.string().describe("The source Notion database or data source ID containing documents to index."),
+		data_source_id: j
+			.string()
+			.describe("The source Notion database or data source ID containing documents to index. Use null to sync the configured Docs database.")
+			.nullable(),
 		limit: j.number().describe("Maximum number of source pages to sync. Use null for the default.").nullable(),
 		dry_run: j.boolean().describe("When true, preview changes without writing to Notion.").nullable(),
 	}),

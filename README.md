@@ -8,9 +8,10 @@ This MVP is not a web app. It is a Notion-native system made of:
 
 - one hand-crafted Notion Agent: **Notwin**
 - one TypeScript Notion Worker exposing Agent tools
-- three Notion databases:
+- four Notion databases:
+  - Docs
   - Persona Registry
-  - Source Docs / Docs Index
+  - Docs Index
   - Persona Runs
 
 The Notion Agent does the reasoning and writing. The Worker provides deterministic tools for schema checks, document indexing, persona lookup, persona creation, and run-state updates.
@@ -44,6 +45,7 @@ Fill in:
 
 ```text
 NOTION_API_TOKEN=
+DOCS_DATABASE_ID=
 PERSONA_REGISTRY_DATABASE_ID=
 DOCS_INDEX_DATABASE_ID=
 PERSONA_RUNS_DATABASE_ID=
