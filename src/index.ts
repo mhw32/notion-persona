@@ -2,7 +2,7 @@ import { Worker } from "@notionhq/workers";
 import { j } from "@notionhq/workers/schema-builder";
 import { syncChangedFeatures, syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
 import { createOrUpdatePersona, getFeaturesForOwner, getPersonaSourceFeatures, listFeatureOwners, resolvePersonas } from "./tools/personas.js";
-import { appendRunEvent, createRun, enqueueDelegatedPersonas, getRunState, updateRun } from "./tools/runs.js";
+import { appendRunEvent, createRun, enqueueDelegatedPersonas, getRunState, recordPersonaAction, updateRun } from "./tools/runs.js";
 import { ensureWorkspaceSchema } from "./tools/schema.js";
 
 const worker = new Worker();
@@ -151,6 +151,7 @@ worker.tool("createRun", {
 		selected_personas: j.array(j.string()).describe("Ordered persona handles selected for the run."),
 		selected_context_docs: j.array(j.string()).describe("Source page IDs or Feature row IDs selected as context."),
 		max_turns: j.number().describe("Max persona turns before forced completion. Use null for default 20.").nullable(),
+		per_persona_max_actions: j.number().describe("Max actions each persona may take. Use null for default 3.").nullable(),
 	}),
 	execute: executeTool(createRun),
 });
@@ -177,11 +178,27 @@ worker.tool("updateRun", {
 		current_round: j.number().describe("Updated current round, or null to preserve.").nullable(),
 		agent_queue: j.array(j.string()).describe("Updated remaining queue, or null to preserve.").nullable(),
 		processed_comment_ids: j.array(j.string()).describe("Updated processed comment IDs, or null to preserve.").nullable(),
+		persona_action_counts_json: j.string().describe("Updated JSON object of persona handle to action count, or null to preserve.").nullable(),
 		last_actor: j.string().describe("Last persona handle that acted, or null to preserve.").nullable(),
 		lock_until: j.string().describe("ISO timestamp for lock expiry, empty string to clear, or null to preserve.").nullable(),
 		failure_reason: j.string().describe("Failure reason or log text, or null to preserve.").nullable(),
 	}),
 	execute: executeTool(updateRun),
+});
+
+worker.tool("recordPersonaAction", {
+	title: "Record Persona Action",
+	description:
+		"Record one persona action against an Execution. Comment, reply, tag/delegate, and skip all count as actions.",
+	schema: j.object({
+		run_id: j.string().describe("Run ID to update."),
+		persona_handle: j.string().describe("Persona handle that acted."),
+		action_type: j.string().describe("One of new_comment, reply_to_thread, tag_persona, skip, or no_action."),
+		agent_queue: j.array(j.string()).describe("Updated remaining queue after this action, or null to auto-remove this persona.").nullable(),
+		processed_comment_ids: j.array(j.string()).describe("Updated processed comment IDs, or null to preserve.").nullable(),
+		message: j.string().describe("Short action summary for the execution log, or null.").nullable(),
+	}),
+	execute: executeTool(recordPersonaAction),
 });
 
 worker.tool("enqueueDelegatedPersonas", {

@@ -45,6 +45,8 @@ export const EXECUTIONS_PROPERTIES = [
 	"Selected Context Docs",
 	"Turn Count",
 	"Max Turns",
+	"Per Persona Max Actions",
+	"Persona Action Counts",
 	"Current Round",
 	"Agent Queue",
 	"Processed Comment IDs",
