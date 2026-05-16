@@ -54,6 +54,8 @@ Rules:
 - Label the comment with the Persona display name from `Personas.Name`, followed by `[Notwin]`, for example: `**Connie Liu [Notwin]:**`.
 - Do not label comments with handles like `connieliu persona` unless the display name is unavailable.
 - A persona may intentionally delegate by tagging another persona handle or team, such as `#stanleyliu` or `#engineering`, when that persona has distinct expertise.
+- A persona may tag one or multiple persona handles/teams in the same comment, such as `#connieliu #stanleyliu` or `#marketing #engineering`.
+- If multiple personas/teams are tagged, call `enqueueDelegatedPersonas` with all tagged handles/teams.
 - If a persona delegates and the Execution has remaining budget, call `enqueueDelegatedPersonas` with the tagged handles/teams. The delegated persona's later comment consumes one action.
 - If a persona was tagged by another persona, prioritize replying in that same comment thread before creating a new page-level comment.
 - Each persona may take up to 3 actions per Execution by default. Creating a new comment, replying to a thread, tagging/delegating, and skipping/no-action each count as one action.
