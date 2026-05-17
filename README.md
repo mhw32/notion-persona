@@ -1,13 +1,13 @@
-# notion-persona
+# Notwin: Notion Digital Twins
 
-Persona Agents for the Notion Developer Hackathon.
+AI-powered digital twins that review, debate, and comment as your team — built natively on Notion.
 
 ## What This Is
 
-This MVP is not a web app. It is a Notion-native system made of:
+Notwin is a Notion-native system made of:
 
-- one hand-crafted Notion Agent: **Notwin**
-- one TypeScript Notion Worker exposing Agent tools
+- one Notion Agent
+- one TypeScript Notion Worker exposing 17 Agent tools
 - four Notion databases:
   - Docs
   - Personas
@@ -15,6 +15,17 @@ This MVP is not a web app. It is a Notion-native system made of:
   - Executions
 
 The Notion Agent does the reasoning and writing. The Worker provides deterministic tools for schema checks, features indexing, persona lookup, persona creation, and run-state updates.
+
+Notwin operates in four modes and supports two pipeline actions:
+
+| Mode / Action | What it does |
+|---|---|
+| **Manager** | Orchestrates a review run — resolves persona handles, selects up to three personas, and delegates to Commentor |
+| **Commentor** | One persona takes bounded actions: reply to a thread, post a new comment, tag another persona, or skip |
+| **Cloner** | Creates or refreshes a persona from a person's Docs-derived Features |
+| **Indexer** | Extracts Features from changed Docs pages and refreshes affected Personas |
+| **Update** | Full pipeline: sync changed Docs → extract Features → refresh Personas |
+| **GitHub PR Import** | Pulls recent PRs into Docs, then runs Update |
 
 ## Repo Structure
 
@@ -86,7 +97,3 @@ npm run deploy
 ```
 
 After deploy, attach the Worker tools to the Notion Agent and paste the instructions from `src/instructions.md` into the agent configuration.
-
-## Current Assumption
-
-Manager, Commentor, and Cloner are implemented as modes of a single Notion Agent. The Worker does not require separate Notion Agent IDs. If those roles are split into separate native Notion Agents later, add optional agent IDs/URLs to configuration and the Personas.
