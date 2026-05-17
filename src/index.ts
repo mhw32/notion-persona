@@ -166,7 +166,7 @@ worker.tool("createRun", {
 		selected_personas: j.array(j.string()).describe("Ordered persona handles selected for the run."),
 		selected_context_docs: j.array(j.string()).describe("Source page IDs or Feature row IDs selected as context."),
 		max_turns: j.number().describe("Max persona turns before forced completion. Use null for default 16.").nullable(),
-		per_persona_max_actions: j.number().describe("Internal guardrail. Use null; comment-triggered personas take exactly 2 visible thread replies.").nullable(),
+		per_persona_max_actions: j.number().describe("Internal guardrail. Use null for default 4 total actions per persona per Execution.").nullable(),
 	}),
 	execute: executeTool(createRun),
 });

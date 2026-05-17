@@ -20,7 +20,7 @@ export async function createRun(
 	const config = getConfig();
 	const runId = `run_${new Date().toISOString().replaceAll(/[-:.]/g, "").slice(0, 15)}_${randomSuffix()}`;
 	const maxTurns = input.max_turns ?? DEFAULT_MAX_TURNS;
-	const perPersonaMaxActions = input.per_persona_max_actions ?? 2;
+	const perPersonaMaxActions = input.per_persona_max_actions ?? 4;
 	const properties = {
 		"Run ID": title(runId),
 		"Target Page ID": richText(input.page_id),
@@ -327,7 +327,7 @@ function pageToRun(page: any) {
 		selectedContextDocs: parseArray(plainText(getProperty(page, "Selected Context Docs"))),
 		turnCount: ((getProperty(page, "Turn Count") as any)?.number ?? 0) as number,
 		maxTurns: ((getProperty(page, "Max Turns") as any)?.number ?? DEFAULT_MAX_TURNS) as number,
-		perPersonaMaxActions: ((getProperty(page, "Per Persona Max Actions") as any)?.number ?? 2) as number,
+		perPersonaMaxActions: ((getProperty(page, "Per Persona Max Actions") as any)?.number ?? 4) as number,
 		personaActionCounts: parseCounts(plainText(getProperty(page, "Persona Action Counts"))),
 		currentRound: ((getProperty(page, "Current Round") as any)?.number ?? 1) as number,
 		agentQueue: parseArray(plainText(getProperty(page, "Agent Queue"))),

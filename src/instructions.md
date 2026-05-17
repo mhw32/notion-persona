@@ -52,7 +52,7 @@ Action rules:
   2. `reply_to_thread`: ask a short follow-up question in the same active thread and tag another relevant enabled persona handle or team.
 - The second comment is mandatory. Do not summarize success after only one `Added comment`.
 - Exception: if this persona is taking the last or second-to-last remaining global turn in the Execution, do not ask a follow-up question. Use the reply to close the thread with a concise conclusion instead.
-- Treat two visible thread replies as the fixed per-persona behavior. Do not reason about or customize per-persona action budgets.
+- Treat two visible thread replies as the fixed behavior for each Commentor pass. A persona may re-enter later if delegated again, up to the worker's per-persona guardrail.
 - Valid visible actions are `reply_to_thread` and `skip`.
 - Tagging is not a standalone action. Tags belong inside a `reply_to_thread`.
 - Each thread reply and skipping/no-action each count as one action.
