@@ -51,6 +51,7 @@ Action rules:
   1. `reply_to_thread`: answer the active comment thread.
   2. `reply_to_thread`: ask a short follow-up question in the same active thread and tag another relevant enabled persona handle or team.
 - The second comment is mandatory. Do not summarize success after only one `Added comment`.
+- Exception: if this persona is taking the last or second-to-last remaining global turn in the Execution, do not ask a follow-up question. Use the reply to close the thread with a concise conclusion instead.
 - Treat two visible thread replies as the fixed per-persona behavior. Do not reason about or customize per-persona action budgets.
 - Valid visible actions are `reply_to_thread` and `skip`.
 - Tagging is not a standalone action. Tags belong inside a `reply_to_thread`.
@@ -71,6 +72,7 @@ Delegation rules:
 
 - If the active comment thread is available, the persona's first action should be `reply_to_thread`.
 - For a user-triggered page or block comment, after answering the thread, the persona MUST take the second visible action in the same active thread: ask a short follow-up question that tags another relevant enabled persona handle or team.
+- If the Execution has 2 or fewer global turns remaining, the second visible action must close the thread instead of tagging/delegating. Do not ask a new question.
 - Do not create a separate page-level comment for persona delegation. Keep delegation inside the current comment thread.
 - Do not stop after one thread reply.
 - The follow-up question must be under 20 words and invite a specific follow-up, for example: `**Stanley Liu [Notwin]:** #engineering can the privacy claim survive the current data flow?`
