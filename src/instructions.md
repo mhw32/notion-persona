@@ -62,6 +62,9 @@ Rules:
 - If multiple personas/teams are tagged, call `enqueueDelegatedPersonas` with all tagged handles/teams.
 - If a persona delegates and the Execution has remaining budget, call `enqueueDelegatedPersonas` with the tagged handles/teams. The delegated persona's later comment consumes one action.
 - If a persona was tagged by another persona, prioritize replying in that same comment thread before creating a new page-level comment.
+- If possible, always reply to the active comment thread first.
+- Additionally, when budget remains, start a separate new page-level or block-level comment with one short question and tag another relevant member/team.
+- The separate question comment should be under 25 words and should invite a specific follow-up, for example: `Question for #engineering: can the privacy claim survive the current data flow?`
 - Each persona may take up to 3 actions per Execution by default. Creating a new comment, replying to a thread, and skipping/no-action each count as one action.
 - After every action, call `recordPersonaAction`.
 - Encourage tagging/delegation when the persona is not very confident, when another persona has clearer domain ownership, or when a second perspective would make the review more useful.
@@ -128,6 +131,25 @@ Steps:
    - number of Features updated
    - Personas refreshed
    - any rows skipped because Owner was missing
+
+## GitHub PR Import Action
+
+Use this action when the user asks to import, pull, or sync recent GitHub PRs into Docs.
+
+Steps:
+
+1. Prefer the GitHub MCP connection for reading PR context when available.
+2. Use `importGithubPullRequests` to create missing raw Docs rows for PRs created in the last week.
+3. Store each PR as a Docs page. The PR body/README should be the page content. `External ID` should identify the PR so imports are idempotent.
+4. Ignore PRs that already exist in Docs.
+5. After importing, run the Update action so new PR docs become Features and affected Personas refresh.
+
+Default tool inputs:
+
+- `created_within_days = 7`
+- `state = open`
+- `limit_per_repo = 10` unless the user specifies another limit
+- `dry_run = false` unless the user asks for a preview
 
 ## Update Pipeline
 

@@ -1,6 +1,7 @@
 import { Worker } from "@notionhq/workers";
 import { j } from "@notionhq/workers/schema-builder";
 import { syncChangedFeatures, syncFeatures, suggestAttribution, updateFeatureRow } from "./tools/features.js";
+import { importGithubPullRequests } from "./tools/github.js";
 import { createOrUpdatePersona, getFeaturesForOwner, getPersonaSourceFeatures, listFeatureOwners, resolvePersonas } from "./tools/personas.js";
 import { appendRunEvent, createRun, enqueueDelegatedPersonas, getRunState, recordPersonaAction, updateRun } from "./tools/runs.js";
 import { ensureWorkspaceSchema } from "./tools/schema.js";
@@ -73,6 +74,21 @@ worker.tool("updateFeatureRow", {
 		tags: j.array(j.string()).describe("Updated tags, or null to leave unchanged.").nullable(),
 	}),
 	execute: executeTool(updateFeatureRow),
+});
+
+worker.tool("importGithubPullRequests", {
+	title: "Import GitHub Pull Requests",
+	description:
+		"Fetch latest GitHub pull requests from one or more repositories and create raw source documents in the Docs database.",
+	schema: j.object({
+		repositories: j.array(j.string()).describe("GitHub repositories as owner/repo, such as notion/notion-sdk-js."),
+		limit_per_repo: j.number().describe("Maximum PRs to import per repository. Use null for default 10.").nullable(),
+		state: j.string().describe("PR state: open, closed, or all. Use null for open.").nullable(),
+		owner_user_id: j.string().describe("Optional Notion user ID to set as Docs.Owner for imported PR docs. Use null for no owner.").nullable(),
+		created_within_days: j.number().describe("Only import PRs created within this many days. Use null for default 7.").nullable(),
+		dry_run: j.boolean().describe("When true, preview imports without writing to Notion.").nullable(),
+	}),
+	execute: executeTool(importGithubPullRequests),
 });
 
 worker.tool("resolvePersonas", {

@@ -70,6 +70,19 @@ export async function createDatabasePage(
 	});
 }
 
+export async function createDatabasePageWithChildren(
+	notion: NotionClient,
+	databaseId: string,
+	properties: Record<string, unknown>,
+	children: Array<Record<string, unknown>>,
+): Promise<any> {
+	return notion.pages.create({
+		parent: { database_id: databaseId },
+		properties,
+		children,
+	});
+}
+
 export async function updatePageProperties(
 	notion: NotionClient,
 	pageId: string,
