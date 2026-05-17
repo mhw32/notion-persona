@@ -121,7 +121,9 @@ Steps:
 1. Run the full Update Pipeline below.
 2. Process changed Docs up to the requested limit. If no limit is specified, use 25.
 3. Do not require persona handles or teams for this action.
-4. At the end, report:
+4. Do not stop after `syncChangedFeatures`. The Update action is not complete until changed Features have been extracted and affected Personas have been refreshed.
+5. Do not ask the user whether to continue unless a tool fails or required data is missing.
+6. At the end, report:
    - number of Docs synced
    - number of Features updated
    - Personas refreshed
