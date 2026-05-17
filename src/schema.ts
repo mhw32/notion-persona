@@ -62,4 +62,4 @@ export const REQUIRED_SCHEMAS = {
 	executions: EXECUTIONS_PROPERTIES,
 } as const;
 
-export const DEFAULT_MAX_TURNS = 10;
+export const DEFAULT_MAX_TURNS = 16;

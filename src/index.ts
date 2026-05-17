@@ -165,8 +165,8 @@ worker.tool("createRun", {
 		root_comment_id: j.string().describe("Comment ID that started the run, or null if unavailable.").nullable(),
 		selected_personas: j.array(j.string()).describe("Ordered persona handles selected for the run."),
 		selected_context_docs: j.array(j.string()).describe("Source page IDs or Feature row IDs selected as context."),
-		max_turns: j.number().describe("Max persona turns before forced completion. Use null for default 20.").nullable(),
-		per_persona_max_actions: j.number().describe("Max actions each persona may take. Use null for default 3.").nullable(),
+		max_turns: j.number().describe("Max persona turns before forced completion. Use null for default 16.").nullable(),
+		per_persona_max_actions: j.number().describe("Internal guardrail. Use null; comment-triggered personas take exactly 2 visible thread replies.").nullable(),
 	}),
 	execute: executeTool(createRun),
 });
@@ -204,7 +204,7 @@ worker.tool("updateRun", {
 worker.tool("recordPersonaAction", {
 	title: "Record Persona Action",
 	description:
-		"Record one persona action against an Execution. Comment, reply, tag/delegate, and skip all count as actions.",
+		"Record one persona action against an Execution. For replies that tag another persona/team, call enqueueDelegatedPersonas before recording this action.",
 	schema: j.object({
 		run_id: j.string().describe("Run ID to update."),
 		persona_handle: j.string().describe("Persona handle that acted."),

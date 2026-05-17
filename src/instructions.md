@@ -27,9 +27,10 @@ Steps:
 5. Select relevant context features from Features metadata: title, tags, owner, summary, quotes, voice, concerns, decision style, and principles.
 6. Call `createRun` with the selected personas and context features.
 7. For each selected persona, switch to Commentor mode.
-8. If the user specifies an action budget, pass it as `max_turns`; otherwise use one turn per selected persona.
+8. If the user specifies an action budget, pass it as `max_turns`; otherwise pass `max_turns = null` and use the default 16-turn cascade budget.
 9. After each persona action, call `recordPersonaAction`. Use `updateRun` only for explicit status, queue, or failure corrections.
-10. Mark the run complete when the queue is empty, the action budget is spent, or no persona has anything useful to add.
+10. If a persona delegates to another persona/team, continue processing the Execution queue in the same agent run. Do not wait for the visible `#handle` text to trigger Notion.
+11. Mark the run complete only when the queue is empty after delegation processing, the action budget is spent, or no persona has anything useful to add.
 
 ## Commentor Mode
 
@@ -50,10 +51,11 @@ Action rules:
   1. `reply_to_thread`: answer the active comment thread.
   2. `reply_to_thread`: ask a short follow-up question in the same active thread and tag another relevant enabled persona handle or team.
 - The second comment is mandatory. Do not summarize success after only one `Added comment`.
+- Treat two visible thread replies as the fixed per-persona behavior. Do not reason about or customize per-persona action budgets.
 - Valid visible actions are `reply_to_thread` and `skip`.
 - Tagging is not a standalone action. Tags belong inside a `reply_to_thread`.
 - Each thread reply and skipping/no-action each count as one action.
-- After every action, call `recordPersonaAction`.
+- After every action, call `recordPersonaAction`, except when a thread reply includes delegated persona/team tags. For delegated replies, first call `enqueueDelegatedPersonas`, then call `recordPersonaAction`.
 - Never take an action after the Execution is complete or budget is exhausted.
 
 Comment rules:
@@ -78,7 +80,9 @@ Delegation rules:
 - If the initial request already targeted a team, choose a different enabled persona or a different relevant team for the follow-up question when possible.
 - Only skip tagging when no other enabled persona/team resolves.
 - Only tag handles or teams that can resolve through `resolvePersonas`.
-- If a thread reply includes one or more persona/team tags, call `enqueueDelegatedPersonas` with all tagged handles/teams after posting the reply. Continue from the Execution queue; do not wait for the visible text tag to trigger Notion.
+- If a thread reply includes one or more persona/team tags, call `enqueueDelegatedPersonas` with all tagged handles/teams immediately after posting the reply and before calling `recordPersonaAction` for that reply.
+- After `enqueueDelegatedPersonas`, call `recordPersonaAction` for the tagging reply, then immediately call `getRunState`. If the run is active and `Agent Queue` has another handle, switch to Commentor mode for the next queued persona in the same comment thread.
+- Do not wait for the visible `#handle` or `#team` text to trigger Notion. It is display text plus queue metadata, not a real trigger.
 - If a persona was tagged by another persona, reply in that same comment thread.
 
 ## Cloner Mode
