@@ -88,6 +88,7 @@ async function syncFeaturePages(
 			changes.push({
 				action: existing ? "would_update" : "would_create",
 				page_id: sourcePageId,
+				source_url: pageUrl(sourcePageId),
 				title: titleFromPage(sourcePage),
 				last_edited_time: sourcePage.last_edited_time,
 			});
@@ -96,10 +97,22 @@ async function syncFeaturePages(
 
 		if (existing) {
 			await updatePageProperties(notion, existing.id, properties);
-			changes.push({ action: "updated", page_id: sourcePageId, feature_row_id: existing.id, last_edited_time: sourcePage.last_edited_time });
+			changes.push({
+				action: "updated",
+				page_id: sourcePageId,
+				source_url: pageUrl(sourcePageId),
+				feature_row_id: existing.id,
+				last_edited_time: sourcePage.last_edited_time,
+			});
 		} else {
 			const created = await createDatabasePage(notion, featuresDatabaseId, properties);
-			changes.push({ action: "created", page_id: sourcePageId, feature_row_id: created.id, last_edited_time: sourcePage.last_edited_time });
+			changes.push({
+				action: "created",
+				page_id: sourcePageId,
+				source_url: pageUrl(sourcePageId),
+				feature_row_id: created.id,
+				last_edited_time: sourcePage.last_edited_time,
+			});
 		}
 	}
 

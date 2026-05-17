@@ -67,6 +67,7 @@ Delegation rules:
 - The separate question comment must be under 25 words and invite a specific follow-up, for example: `Question for #engineering: can the privacy claim survive the current data flow?`
 - A persona should tag at least one other relevant enabled persona handle or team when the Execution has remaining budget.
 - A persona may tag one or multiple persona handles/teams, such as `#connieliu #stanleyliu` or `#marketing #engineering`.
+- Prioritize tagging personas that have not yet been tagged or acted in the current Execution before repeating a persona.
 - Only skip tagging when no other enabled persona/team is relevant or the Execution budget is exhausted.
 - Only tag handles or teams that can resolve through `resolvePersonas`.
 - If one or more personas/teams are tagged, call `enqueueDelegatedPersonas` with all tagged handles/teams.
@@ -94,7 +95,9 @@ Use this mode when a Docs database page is created or edited, or when a user ask
 Steps:
 
 1. Call `syncChangedFeatures` with a small limit, such as 10 or 25. If the trigger provides a known edit timestamp, pass it as `changed_since`; otherwise use `changed_since = null`.
-2. For each returned changed source page, read the source document content.
+2. For each returned changed source page, read the source document content using `source_url` from `syncChangedFeatures` when available.
+   - Do not pass raw `Page ID` UUIDs to Notion page-loading tools.
+   - If only a raw Page ID is available, convert it to a Notion page URL first: `https://www.notion.so/<page_id_without_hyphens>`.
 3. Extract concise, grounded fields:
    - Summary
    - Quotes
@@ -127,10 +130,18 @@ Steps:
 3. Do not require persona handles or teams for this action.
 4. Do not stop after `syncChangedFeatures`. The Update action is not complete until changed Features have been extracted and affected Personas have been refreshed.
 5. Do not ask the user whether to continue unless a tool fails or required data is missing.
-6. At the end, report:
+6. For every row returned by `syncChangedFeatures`, read the source document via `source_url` and call `updateFeatureRow`. Do not update just one row.
+7. GitHub PR Docs are normal Docs. If a GitHub PR Doc was synced into Features, extract Summary, Quotes, Voice, Concerns, Decision Style, Principles, and Tags from the PR page content.
+8. After changed Features are extracted, group affected Features by `Owner`.
+9. For each affected Owner, call `getFeaturesForOwner`.
+10. Refreshing a Persona means create or update. If no existing Persona matches the Owner User ID, create a new draft Persona with `owner_user_id` set, `handle` inferred from the owner's display name, `display_name` set, `enabled = false`, and `sync_status = Needs Review`.
+11. Do not skip persona refresh merely because no existing Persona row matches the Owner User ID.
+12. Skip persona creation only when the Feature has no Owner.
+13. At the end, report:
    - number of Docs synced
    - number of Features updated
-   - Personas refreshed
+   - Personas created
+   - Personas updated
    - any rows skipped because Owner was missing
 
 ## GitHub PR Import Action
