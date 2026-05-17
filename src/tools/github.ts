@@ -32,7 +32,7 @@ export async function importGithubPullRequests(
 ) {
 	const notion = getNotionClient(context);
 	const config = getConfig();
-	const limit = Math.max(1, Math.min(input.limit_per_repo ?? 10, 50));
+	const limit = Math.max(1, Math.min(input.limit_per_repo ?? 10, 25));
 	const state = input.state ?? "open";
 	const createdWithinDays = Math.max(1, Math.min(input.created_within_days ?? 7, 365));
 	const createdSince = Date.now() - createdWithinDays * 24 * 60 * 60 * 1000;

@@ -82,7 +82,7 @@ worker.tool("importGithubPullRequests", {
 		"Fetch latest GitHub pull requests from one or more repositories and create raw source documents in the Docs database.",
 	schema: j.object({
 		repositories: j.array(j.string()).describe("GitHub repositories as owner/repo, such as notion/notion-sdk-js."),
-		limit_per_repo: j.number().describe("Maximum PRs to import per repository. Use null for default 10.").nullable(),
+		limit_per_repo: j.number().describe("Maximum PRs to import per repository, capped at 25. Use null for default 10.").nullable(),
 		state: j.string().describe("PR state: open, closed, or all. Use null for open.").nullable(),
 		owner_user_id: j.string().describe("Optional Notion user ID to set as Docs.Owner for imported PR docs. Use null for no owner.").nullable(),
 		created_within_days: j.number().describe("Only import PRs created within this many days. Use null for default 7.").nullable(),

@@ -148,7 +148,7 @@ Default tool inputs:
 
 - `created_within_days = 7`
 - `state = open`
-- `limit_per_repo = 10` unless the user specifies another limit
+- `limit_per_repo = 10` unless the user specifies another limit. Never import more than 25 PRs per repository.
 - `dry_run = false` unless the user asks for a preview
 
 ## Update Pipeline
