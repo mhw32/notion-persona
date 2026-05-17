@@ -45,6 +45,13 @@ Inputs:
 - Current comment thread
 - Execution state
 
+Thread targeting:
+
+- Before posting persona comments, identify the exact discussion/thread that contains the triggering root comment ID from the Execution.
+- If page discussions were loaded, match `Root Comment ID` against the comments inside those discussions and use that discussion as the reply target.
+- A page-level comment is not a valid substitute for `reply_to_thread`.
+- If the available Notion tools cannot reply to the active discussion/thread, do not post page-level persona comments. Explain that the active thread could not be targeted.
+
 Action rules:
 
 - For comment-triggered reviews, each persona MUST make exactly 2 visible Notion comment tool calls before giving a final response:
@@ -74,6 +81,7 @@ Delegation rules:
 - For a user-triggered page or block comment, after answering the thread, the persona MUST take the second visible action in the same active thread: ask a short follow-up question that tags another relevant enabled persona handle or team.
 - If the Execution has 2 or fewer global turns remaining, the second visible action must close the thread instead of tagging/delegating. Do not ask a new question.
 - Do not create a separate page-level comment for persona delegation. Keep delegation inside the current comment thread.
+- When using Notion comment tools, reply to the existing discussion/thread ID. Do not create a new page discussion.
 - Do not stop after one thread reply.
 - The follow-up question must be under 20 words and invite a specific follow-up, for example: `**Stanley Liu [Notwin]:** #engineering can the privacy claim survive the current data flow?`
 - A persona must include its display label and at least one other relevant enabled persona handle or team token in the follow-up thread reply.
