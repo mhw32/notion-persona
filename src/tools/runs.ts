@@ -119,6 +119,7 @@ export async function recordPersonaAction(
 		persona_handle: string;
 		action_type: string;
 		agent_queue: string[] | null;
+		delegated_handles_or_teams?: string[] | null;
 		processed_comment_ids: string[] | null;
 		message: string | null;
 	},
@@ -142,7 +143,22 @@ export async function recordPersonaAction(
 
 	const nextTurnCount = current.turnCount + 1;
 	const nextCounts = { ...current.personaActionCounts, [personaHandle]: currentPersonaCount + 1 };
-	const nextQueue = input.agent_queue ?? defaultNextQueue(current.agentQueue, personaHandle, input.action_type, nextCounts[personaHandle], current.perPersonaMaxActions);
+	let nextQueue = input.agent_queue ?? defaultNextQueue(current.agentQueue, personaHandle, input.action_type, nextCounts[personaHandle], current.perPersonaMaxActions);
+	let nextSelectedPersonas = current.selectedPersonas;
+	let delegatedEnqueued: string[] = [];
+	if (input.delegated_handles_or_teams?.length) {
+		const delegated = await getDelegatedQueueAdditions(
+			notion,
+			config.personasDatabaseId,
+			input.delegated_handles_or_teams,
+			current,
+			nextQueue,
+			nextTurnCount,
+		);
+		nextQueue = delegated.nextQueue;
+		nextSelectedPersonas = delegated.nextSelectedPersonas;
+		delegatedEnqueued = delegated.enqueued;
+	}
 	const nextProcessedCommentIds = input.processed_comment_ids ?? current.processedCommentIds;
 	let nextStatus = current.status;
 	if (nextTurnCount >= current.maxTurns || nextQueue.length === 0) nextStatus = "complete";
@@ -152,9 +168,26 @@ export async function recordPersonaAction(
 		"Turn Count": number(nextTurnCount),
 		"Persona Action Counts": richText(JSON.stringify(nextCounts)),
 		"Agent Queue": richText(JSON.stringify(nextQueue)),
+		"Selected Personas": richText(JSON.stringify(nextSelectedPersonas)),
 		"Processed Comment IDs": richText(JSON.stringify(nextProcessedCommentIds)),
 		"Last Actor": richText(personaHandle),
 	});
+
+	if (delegatedEnqueued.length > 0) {
+		await appendRunEvent(
+			{
+				run_id: input.run_id,
+				event_type: "personas_delegated",
+				message: `${personaHandle} delegated to ${delegatedEnqueued.join(", ")}`,
+				metadata_json: JSON.stringify({
+					requested: input.delegated_handles_or_teams,
+					enqueued: delegatedEnqueued,
+					source: "recordPersonaAction",
+				}),
+			},
+			context,
+		);
+	}
 
 	await appendRunEvent(
 		{
@@ -164,6 +197,8 @@ export async function recordPersonaAction(
 			metadata_json: JSON.stringify({
 				persona_handle: personaHandle,
 				action_type: input.action_type,
+				delegated_handles_or_teams: input.delegated_handles_or_teams ?? [],
+				delegated_enqueued: delegatedEnqueued,
 				persona_action_count: nextCounts[personaHandle],
 				turn_count: nextTurnCount,
 				status: nextStatus,
@@ -181,6 +216,7 @@ export async function recordPersonaAction(
 		persona_action_count: nextCounts[personaHandle],
 		persona_action_budget: current.perPersonaMaxActions,
 		agent_queue: nextQueue,
+		delegated_enqueued: delegatedEnqueued,
 	};
 }
 
@@ -299,6 +335,49 @@ async function resolveDelegatedPersonas(notion: Record<string, any>, personasDat
 			if (!persona.enabled || !["Enabled", "Needs Review"].includes(persona.syncStatus)) return false;
 			return requested.has(normalizeToken(persona.handle)) || requested.has(normalizeToken(persona.team));
 		});
+}
+
+async function getDelegatedQueueAdditions(
+	notion: Record<string, any>,
+	personasDatabaseId: string,
+	handlesOrTeams: string[],
+	current: ReturnType<typeof pageToRun>,
+	baseQueue: string[],
+	nextTurnCount: number,
+) {
+	const remainingBudget = Math.max(0, current.maxTurns - nextTurnCount - baseQueue.length);
+	if (remainingBudget <= 0) {
+		return {
+			nextQueue: baseQueue,
+			nextSelectedPersonas: current.selectedPersonas,
+			enqueued: [],
+		};
+	}
+
+	const delegated = await resolveDelegatedPersonas(notion, personasDatabaseId, handlesOrTeams);
+	const queued = new Set(baseQueue.map(normalizeToken));
+	const toAdd: string[] = [];
+
+	for (const persona of delegated) {
+		const handle = normalizeToken(persona.handle);
+		if (!handle || queued.has(handle)) continue;
+		if ((current.personaActionCounts[handle] ?? 0) >= current.perPersonaMaxActions) continue;
+		toAdd.push(handle);
+		queued.add(handle);
+		if (toAdd.length >= remainingBudget) break;
+	}
+
+	const selected = new Set(current.selectedPersonas.map(normalizeToken));
+	const nextSelectedPersonas = [...current.selectedPersonas];
+	for (const handle of toAdd) {
+		if (!selected.has(handle)) nextSelectedPersonas.push(handle);
+	}
+
+	return {
+		nextQueue: [...baseQueue, ...toAdd],
+		nextSelectedPersonas,
+		enqueued: toAdd,
+	};
 }
 
 async function findRunById(notion: Record<string, any>, databaseId: string, runId: string) {

@@ -63,7 +63,7 @@ Action rules:
 - Valid visible actions are `reply_to_thread` and `skip`.
 - Tagging is not a standalone action. Tags belong inside a `reply_to_thread`.
 - Each thread reply and skipping/no-action each count as one action.
-- After every action, call `recordPersonaAction`, except when a thread reply includes delegated persona/team tags. For delegated replies, first call `enqueueDelegatedPersonas`, then call `recordPersonaAction`.
+- After every action, call `recordPersonaAction`. If the thread reply visibly includes persona/team tags, pass those tags in `delegated_handles_or_teams` on the `recordPersonaAction` call so delegation and action recording happen atomically.
 - Never take an action after the Execution is complete or budget is exhausted.
 
 Comment rules:
@@ -90,8 +90,8 @@ Delegation rules:
 - If the initial request already targeted a team, choose a different enabled persona or a different relevant team for the follow-up question when possible.
 - Only skip tagging when no other enabled persona/team resolves.
 - Only tag handles or teams that can resolve through `resolvePersonas`.
-- If a thread reply includes one or more persona/team tags, call `enqueueDelegatedPersonas` with all tagged handles/teams immediately after posting the reply and before calling `recordPersonaAction` for that reply.
-- After `enqueueDelegatedPersonas`, call `recordPersonaAction` for the tagging reply, then immediately call `getRunState`. If the run is active and `Agent Queue` has another handle, switch to Commentor mode for the next queued persona in the same comment thread.
+- If a thread reply includes one or more persona/team tags, call `recordPersonaAction` with `delegated_handles_or_teams` set to all tagged handles/teams. Do not use a separate enqueue step for normal tagged replies.
+- After `recordPersonaAction`, immediately call `getRunState`. If the run is active and `Agent Queue` has another handle, switch to Commentor mode for the next queued persona in the same comment thread.
 - Do not wait for the visible `#handle` or `#team` text to trigger Notion. It is display text plus queue metadata, not a real trigger.
 - If a persona was tagged by another persona, reply in that same comment thread.
 

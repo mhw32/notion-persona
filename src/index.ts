@@ -204,12 +204,16 @@ worker.tool("updateRun", {
 worker.tool("recordPersonaAction", {
 	title: "Record Persona Action",
 	description:
-		"Record one persona action against an Execution. For replies that tag another persona/team, call enqueueDelegatedPersonas before recording this action.",
+		"Record one persona action against an Execution. If the reply tagged personas/teams, pass them in delegated_handles_or_teams so queueing and recording happen atomically.",
 	schema: j.object({
 		run_id: j.string().describe("Run ID to update."),
 		persona_handle: j.string().describe("Persona handle that acted."),
 		action_type: j.string().describe("One of new_comment, reply_to_thread, tag_persona, skip, or no_action."),
 		agent_queue: j.array(j.string()).describe("Updated remaining queue after this action, or null to auto-remove this persona.").nullable(),
+		delegated_handles_or_teams: j
+			.array(j.string())
+			.describe("Persona handles or teams visibly tagged in this action, or null if none. These are enqueued atomically before completion checks.")
+			.nullable(),
 		processed_comment_ids: j.array(j.string()).describe("Updated processed comment IDs, or null to preserve.").nullable(),
 		message: j.string().describe("Short action summary for the execution log, or null.").nullable(),
 	}),
