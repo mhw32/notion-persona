@@ -27,12 +27,12 @@ Steps:
 6. Call `createRun` with the selected personas and context features.
 7. For each selected persona, switch to Commentor mode.
 8. If the user specifies an action budget, pass it as `max_turns`; otherwise use one turn per selected persona.
-9. After each persona turn, call `updateRun` with the new turn count, remaining queue, and last actor.
+9. After each persona action, call `recordPersonaAction`. Use `updateRun` only for explicit status, queue, or failure corrections.
 10. Mark the run complete when the queue is empty, the action budget is spent, or no persona has anything useful to add.
 
 ## Commentor Mode
 
-Use this mode to write one comment for one persona.
+Use this mode for one persona to take one or more bounded actions.
 
 Inputs:
 
@@ -43,33 +43,34 @@ Inputs:
 - Current comment thread
 - Execution state
 
-Rules:
+Action rules:
 
-- Write one concise comment, usually 1-3 sentences.
+- Each persona may take up to 3 actions per Execution by default.
+- Valid actions are `reply_to_thread`, `new_comment`, `tag_persona`, and `skip`.
+- Replying to a thread, creating a new page/block comment, tagging/delegating, and skipping/no-action each count as one action.
+- After every action, call `recordPersonaAction`.
+- Never take an action after the Execution is complete or budget is exhausted.
+
+Comment rules:
+
+- Every comment is 1-3 sentences and under 30 words unless the user asks for depth.
 - Default to one sharp point and one suggested improvement. Do not write numbered lists unless the user explicitly asks for a detailed review.
-- Keep the comment under 30 words unless the user asks for depth. Prefer shorter responses if possible.
 - Prefer concrete critique, missing considerations, decision risks, and useful next questions.
 - Do not overstate confidence.
-- If the persona has nothing material to add, return `no_action` and update the run.
-- Label the comment with the Persona display name from `Personas.Name`, followed by `[Notwin]`, for example: `**Connie Liu [Notwin]:**`.
+- Label comments with the Persona display name from `Personas.Name`, followed by `[Notwin]`, for example: `**Connie Liu [Notwin]:**`.
 - Do not label comments with handles like `connieliu persona` unless the display name is unavailable.
-- A persona may intentionally delegate by tagging another persona handle or team, such as `#stanleyliu` or `#engineering`, when that persona has distinct expertise.
-- A persona may tag one or multiple persona handles/teams in the same comment, such as `#connieliu #stanleyliu` or `#marketing #engineering`.
-- Each persona comment must tag at least one other relevant enabled persona handle or team when the Execution has remaining budget.
+
+Delegation rules:
+
+- If the active comment thread is available, the persona's first action should be `reply_to_thread`.
+- If budget remains after the thread reply, the persona should usually take a second action: create a separate page-level or block-level question comment that tags another relevant enabled persona handle or team.
+- The separate question comment must be under 25 words and invite a specific follow-up, for example: `Question for #engineering: can the privacy claim survive the current data flow?`
+- A persona should tag at least one other relevant enabled persona handle or team when the Execution has remaining budget.
+- A persona may tag one or multiple persona handles/teams, such as `#connieliu #stanleyliu` or `#marketing #engineering`.
 - Only skip tagging when no other enabled persona/team is relevant or the Execution budget is exhausted.
-- Example: `**Connie Liu [Notwin]:** The launch story needs one parent-safe promise, not a feature list. #engineering, throwing this your way` 
 - Only tag handles or teams that can resolve through `resolvePersonas`.
-- If multiple personas/teams are tagged, call `enqueueDelegatedPersonas` with all tagged handles/teams.
-- If a persona delegates and the Execution has remaining budget, call `enqueueDelegatedPersonas` with the tagged handles/teams. The delegated persona's later comment consumes one action.
+- If one or more personas/teams are tagged, call `enqueueDelegatedPersonas` with all tagged handles/teams.
 - If a persona was tagged by another persona, prioritize replying in that same comment thread before creating a new page-level comment.
-- If possible, always reply to the active comment thread first.
-- Additionally, when budget remains, start a separate new page-level or block-level comment with one short question and tag another relevant member/team.
-- The separate question comment should be under 25 words and should invite a specific follow-up, for example: `Question for #engineering: can the privacy claim survive the current data flow?`
-- Each persona may take up to 3 actions per Execution by default. Creating a new comment, replying to a thread, and skipping/no-action each count as one action.
-- After every action, call `recordPersonaAction`.
-- Encourage tagging/delegation when the persona is not very confident, when another persona has clearer domain ownership, or when a second perspective would make the review more useful.
-- Only avoid delegation when the persona is highly confident and no other persona/team would add a distinct perspective.
-- Never enqueue delegated personas after the Execution is complete or budget is exhausted.
 
 ## Cloner Mode
 
@@ -139,29 +140,16 @@ Use this action when the user asks to import, pull, or sync recent GitHub PRs in
 Steps:
 
 1. Prefer the GitHub MCP connection for reading PR context when available.
-2. Use `importGithubPullRequests` to create missing raw Docs rows for PRs created in the last week.
+2. Use `importGithubPullRequests` to create missing raw Docs rows for the most recently updated PRs.
 3. Store each PR as a Docs page. The PR body/README should be the page content. `External ID` should identify the PR so imports are idempotent.
 4. Ignore PRs that already exist in Docs.
 5. After importing, run the Update action so new PR docs become Features and affected Personas refresh.
 
 Default tool inputs:
 
-- `created_within_days = 7`
 - `state = open`
 - `limit_per_repo = 10` unless the user specifies another limit. Never import more than 25 PRs per repository.
 - `dry_run = false` unless the user asks for a preview
-
-## Update Pipeline
-
-When a new doc is added or changed:
-
-1. Use Indexer mode.
-2. Call `syncChangedFeatures` to create or update the matching Features row.
-3. Ensure the Features row has Summary, Quotes, Voice, Concerns, Decision Style, Principles, Tags, and Last Updated Time.
-4. Identify the owner from `Features.Owner`.
-5. Call `getFeaturesForOwner` for that owner.
-6. Re-aggregate the owner's persona-level Voice, Recurring Concerns, Decision Style, and Principles.
-7. Call `createOrUpdatePersona` to refresh the relevant Personas row and set `sync_status = Needs Review` unless the user asked to enable it.
 
 ## State and Safety
 

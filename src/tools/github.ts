@@ -25,7 +25,6 @@ export async function importGithubPullRequests(
 		limit_per_repo: number | null;
 		state: string | null;
 		owner_user_id: string | null;
-		created_within_days: number | null;
 		dry_run: boolean | null;
 	},
 	context?: ToolContext,
@@ -34,8 +33,6 @@ export async function importGithubPullRequests(
 	const config = getConfig();
 	const limit = Math.max(1, Math.min(input.limit_per_repo ?? 10, 25));
 	const state = input.state ?? "open";
-	const createdWithinDays = Math.max(1, Math.min(input.created_within_days ?? 7, 365));
-	const createdSince = Date.now() - createdWithinDays * 24 * 60 * 60 * 1000;
 	const existingDocs = await queryAllCollection(notion, config.docsDatabaseId, {}, 1000);
 	const existingTitles = new Set(existingDocs.map((page) => plainText(getProperty(page, "Name"))));
 	const existingExternalIds = new Set(existingDocs.map((page) => plainText(getProperty(page, "External ID"))).filter(Boolean));
@@ -44,9 +41,7 @@ export async function importGithubPullRequests(
 
 	for (const repository of input.repositories) {
 		const repo = parseRepository(repository);
-		const prs = (await fetchPullRequests(repo.owner, repo.name, state, 100))
-			.filter((pr) => new Date(pr.created_at).getTime() >= createdSince)
-			.slice(0, limit);
+		const prs = await fetchPullRequests(repo.owner, repo.name, state, limit);
 
 		for (const pr of prs) {
 			const externalId = externalPullRequestId(repo.fullName, pr.number);
@@ -90,7 +85,6 @@ export async function importGithubPullRequests(
 		ok: true,
 		state,
 		limit_per_repo: limit,
-		created_within_days: createdWithinDays,
 		imported_count: imported.length,
 		skipped_count: skipped.length,
 		imported,
