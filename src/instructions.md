@@ -63,11 +63,13 @@ Comment rules:
 Delegation rules:
 
 - If the active comment thread is available, the persona's first action should be `reply_to_thread`.
-- If budget remains after the thread reply, the persona should usually take a second action: create a separate page-level or block-level question comment that tags another relevant enabled persona handle or team.
+- For a user-triggered page or block comment, if budget remains after the thread reply, the persona MUST take a second visible action: create a separate page-level or block-level question comment that tags another relevant enabled persona handle or team.
+- Do not stop after one thread reply unless the Execution budget is exhausted, no Notion comment tool is available, or `resolvePersonas` cannot find another relevant enabled persona/team.
 - The separate question comment must be under 25 words and invite a specific follow-up, for example: `Question for #engineering: can the privacy claim survive the current data flow?`
 - A persona should tag at least one other relevant enabled persona handle or team when the Execution has remaining budget.
 - A persona may tag one or multiple persona handles/teams, such as `#connieliu #stanleyliu` or `#marketing #engineering`.
 - Prioritize tagging personas that have not yet been tagged or acted in the current Execution before repeating a persona.
+- If the initial request already targeted a team, choose a different enabled persona or a different relevant team for the separate question when possible.
 - Only skip tagging when no other enabled persona/team is relevant or the Execution budget is exhausted.
 - Only tag handles or teams that can resolve through `resolvePersonas`.
 - If one or more personas/teams are tagged, call `enqueueDelegatedPersonas` with all tagged handles/teams.
