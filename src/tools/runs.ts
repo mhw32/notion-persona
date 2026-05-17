@@ -20,7 +20,7 @@ export async function createRun(
 	const config = getConfig();
 	const runId = `run_${new Date().toISOString().replaceAll(/[-:.]/g, "").slice(0, 15)}_${randomSuffix()}`;
 	const maxTurns = input.max_turns ?? DEFAULT_MAX_TURNS;
-	const perPersonaMaxActions = input.per_persona_max_actions ?? 3;
+	const perPersonaMaxActions = input.per_persona_max_actions ?? 2;
 	const properties = {
 		"Run ID": title(runId),
 		"Target Page ID": richText(input.page_id),
@@ -142,7 +142,7 @@ export async function recordPersonaAction(
 
 	const nextTurnCount = current.turnCount + 1;
 	const nextCounts = { ...current.personaActionCounts, [personaHandle]: currentPersonaCount + 1 };
-	const nextQueue = input.agent_queue ?? current.agentQueue.filter((handle) => normalizeToken(handle) !== personaHandle);
+	const nextQueue = input.agent_queue ?? defaultNextQueue(current.agentQueue, personaHandle, input.action_type, nextCounts[personaHandle], current.perPersonaMaxActions);
 	const nextProcessedCommentIds = input.processed_comment_ids ?? current.processedCommentIds;
 	let nextStatus = current.status;
 	if (nextTurnCount >= current.maxTurns || nextQueue.length === 0) nextStatus = "complete";
@@ -194,7 +194,7 @@ export async function enqueueDelegatedPersonas(
 	if (!row) return { ok: false, message: `No run found for ${input.run_id}.` };
 
 	const current = pageToRun(row);
-	if (current.status !== "active") {
+	if (current.status !== "active" && current.status !== "complete") {
 		return { ok: false, message: `Run ${input.run_id} is ${current.status}; no personas were enqueued.` };
 	}
 
@@ -232,6 +232,7 @@ export async function enqueueDelegatedPersonas(
 		if (!selected.has(handle)) nextSelected.push(handle);
 	}
 	await updatePageProperties(notion, row.id, {
+		Status: select("active"),
 		"Agent Queue": richText(JSON.stringify(nextQueue)),
 		"Selected Personas": richText(JSON.stringify(nextSelected)),
 	});
@@ -326,7 +327,7 @@ function pageToRun(page: any) {
 		selectedContextDocs: parseArray(plainText(getProperty(page, "Selected Context Docs"))),
 		turnCount: ((getProperty(page, "Turn Count") as any)?.number ?? 0) as number,
 		maxTurns: ((getProperty(page, "Max Turns") as any)?.number ?? DEFAULT_MAX_TURNS) as number,
-		perPersonaMaxActions: ((getProperty(page, "Per Persona Max Actions") as any)?.number ?? 3) as number,
+		perPersonaMaxActions: ((getProperty(page, "Per Persona Max Actions") as any)?.number ?? 2) as number,
 		personaActionCounts: parseCounts(plainText(getProperty(page, "Persona Action Counts"))),
 		currentRound: ((getProperty(page, "Current Round") as any)?.number ?? 1) as number,
 		agentQueue: parseArray(plainText(getProperty(page, "Agent Queue"))),
@@ -373,6 +374,23 @@ function safeParseJson(value: string | null) {
 	} catch {
 		return value;
 	}
+}
+
+function defaultNextQueue(
+	currentQueue: string[],
+	personaHandle: string,
+	actionType: string,
+	nextPersonaCount: number,
+	perPersonaMaxActions: number,
+) {
+	const normalizedActionType = normalizeToken(actionType);
+	const shouldRemovePersona =
+		normalizedActionType === "new_comment" ||
+		normalizedActionType === "skip" ||
+		nextPersonaCount >= perPersonaMaxActions;
+
+	if (!shouldRemovePersona) return currentQueue;
+	return currentQueue.filter((handle) => normalizeToken(handle) !== personaHandle);
 }
 
 function normalizeToken(value: string): string {
