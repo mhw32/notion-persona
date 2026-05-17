@@ -33,9 +33,9 @@ export async function importGithubPullRequests(
 	const config = getConfig();
 	const limit = Math.max(1, Math.min(input.limit_per_repo ?? 10, 25));
 	const state = input.state ?? "open";
+	const ownerUserId = input.owner_user_id;
 	const existingDocs = await queryAllCollection(notion, config.docsDatabaseId, {}, 1000);
 	const existingTitles = new Set(existingDocs.map((page) => plainText(getProperty(page, "Name"))));
-	const existingExternalIds = new Set(existingDocs.map((page) => plainText(getProperty(page, "External ID"))).filter(Boolean));
 	const imported = [];
 	const skipped = [];
 
@@ -44,15 +44,14 @@ export async function importGithubPullRequests(
 		const prs = await fetchPullRequests(repo.owner, repo.name, state, limit);
 
 		for (const pr of prs) {
-			const externalId = externalPullRequestId(repo.fullName, pr.number);
 			const docTitle = `GitHub PR ${repo.owner}/${repo.name} #${pr.number}`;
-			if (existingExternalIds.has(externalId) || existingTitles.has(docTitle)) {
+			if (existingTitles.has(docTitle)) {
 				skipped.push({ repository, number: pr.number, title: pr.title, reason: "already_exists" });
 				continue;
 			}
 
 			if (input.dry_run) {
-				imported.push({ action: "would_create", repository, number: pr.number, external_id: externalId, name: docTitle, title: pr.title });
+				imported.push({ action: "would_create", repository, number: pr.number, name: docTitle, title: pr.title });
 				continue;
 			}
 
@@ -61,22 +60,20 @@ export async function importGithubPullRequests(
 				config.docsDatabaseId,
 				{
 					Name: title(docTitle),
-					Owner: people(input.owner_user_id ? [input.owner_user_id] : []),
-					"External ID": { rich_text: [{ text: { content: externalId } }] },
+					Owner: people(ownerUserId ? [ownerUserId] : []),
 				},
 				buildPullRequestBlocks(repo.fullName, pr),
 			);
 			existingTitles.add(docTitle);
-			existingExternalIds.add(externalId);
 			imported.push({
 				action: "created",
 				repository,
 				number: pr.number,
-				external_id: externalId,
 				name: docTitle,
 				title: pr.title,
 				page_id: created.id,
 				url: pr.html_url,
+				owner_user_id: ownerUserId,
 			});
 		}
 	}
@@ -90,10 +87,6 @@ export async function importGithubPullRequests(
 		imported,
 		skipped,
 	};
-}
-
-function externalPullRequestId(repository: string, number: number) {
-	return `github-pr:${repository.toLowerCase()}:${number}`;
 }
 
 function parseRepository(repository: string) {

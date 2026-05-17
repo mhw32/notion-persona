@@ -89,6 +89,7 @@ async function syncFeaturePages(
 				action: existing ? "would_update" : "would_create",
 				page_id: sourcePageId,
 				source_url: pageUrl(sourcePageId),
+				owner_ids: inferred.ownerIds,
 				title: titleFromPage(sourcePage),
 				last_edited_time: sourcePage.last_edited_time,
 			});
@@ -101,6 +102,7 @@ async function syncFeaturePages(
 				action: "updated",
 				page_id: sourcePageId,
 				source_url: pageUrl(sourcePageId),
+				owner_ids: inferred.ownerIds,
 				feature_row_id: existing.id,
 				last_edited_time: sourcePage.last_edited_time,
 			});
@@ -110,6 +112,7 @@ async function syncFeaturePages(
 				action: "created",
 				page_id: sourcePageId,
 				source_url: pageUrl(sourcePageId),
+				owner_ids: inferred.ownerIds,
 				feature_row_id: created.id,
 				last_edited_time: sourcePage.last_edited_time,
 			});
@@ -223,9 +226,23 @@ async function filterChangedSourcePages(notion: Record<string, any>, featuresDat
 	return sourcePages.filter((sourcePage) => {
 		const existing = existingBySourcePageId.get(sourcePage.id);
 		if (!existing) return true;
+		if (needsExtraction(existing)) return true;
 		const lastSyncedSourceUpdate = dateStart(getProperty(existing, "Last Updated Time"));
 		return !lastSyncedSourceUpdate || lastSyncedSourceUpdate < sourcePage.last_edited_time;
 	});
+}
+
+function needsExtraction(featureRow: any) {
+	const extractionProperties = [
+		"Summary",
+		"Quotes",
+		"Voice",
+		"Concerns",
+		"Decision Style",
+		"Principles",
+	] as const;
+
+	return extractionProperties.some((propertyName) => !plainText(getProperty(featureRow, propertyName)).trim());
 }
 
 type Attribution = {

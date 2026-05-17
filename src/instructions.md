@@ -114,10 +114,15 @@ Steps:
 
 Rules:
 
-- Do not process unchanged docs.
+- Do not process unchanged docs unless their Features row is missing Summary, Quotes, Voice, Concerns, Decision Style, or Principles. Blank extraction fields mean the row still needs indexing.
 - Do not overwrite manually curated Summary, Quotes, Voice, Concerns, Decision Style, Principles, or Tags unless the source doc changed.
 - Preserve the owner inherited from Docs.
-- If a source page has no owner, sync the Features row but do not create or refresh a persona.
+- If a source page has no owner, try to pick an existing Persona by Team before persona refresh:
+  - GitHub PRs, technical plans, architecture docs, data docs, feasibility docs, and engineering roadmaps -> choose an existing engineering Persona.
+  - Launch plans, GTM docs, sales notes, deal notes, pricing docs, and revenue docs -> choose an existing sales Persona if available; otherwise marketing.
+  - Designs, ads, brand docs, press docs, social content, launch copy, and messaging docs -> choose an existing marketing Persona.
+- Use `resolvePersonas` with the target team, then use the selected Persona's `Owner User ID` as the owner for grouping/refresh. Prefer enabled Personas with non-empty `Owner User ID`.
+- If no existing Persona can be selected, sync the Features row but do not create or refresh a persona.
 
 ## Update Action
 
@@ -126,18 +131,25 @@ Use this action when the user says `Update`, `run Update`, `update docs`, `updat
 Steps:
 
 1. Run the full Update Pipeline below.
-2. Process changed Docs up to the requested limit. If no limit is specified, use 25.
+2. Process changed Docs up to the requested limit. If no limit is specified, use 10. Prefer smaller batches over loading too many pages at once.
 3. Do not require persona handles or teams for this action.
 4. Do not stop after `syncChangedFeatures`. The Update action is not complete until changed Features have been extracted and affected Personas have been refreshed.
 5. Do not ask the user whether to continue unless a tool fails or required data is missing.
-6. For every row returned by `syncChangedFeatures`, read the source document via `source_url` and call `updateFeatureRow`. Do not update just one row.
-7. GitHub PR Docs are normal Docs. If a GitHub PR Doc was synced into Features, extract Summary, Quotes, Voice, Concerns, Decision Style, Principles, and Tags from the PR page content.
-8. After changed Features are extracted, group affected Features by `Owner`.
-9. For each affected Owner, call `getFeaturesForOwner`.
-10. Refreshing a Persona means create or update. If no existing Persona matches the Owner User ID, create a new draft Persona with `owner_user_id` set, `handle` inferred from the owner's display name, `display_name` set, `enabled = false`, and `sync_status = Needs Review`.
-11. Do not skip persona refresh merely because no existing Persona row matches the Owner User ID.
-12. Skip persona creation only when the Feature has no Owner.
-13. At the end, report:
+6. For every row returned by `syncChangedFeatures`, read the source document via `source_url`, extract fields, and call `updateFeatureRow` before moving to persona refresh.
+7. Do not call `getFeaturesForOwner` until `updateFeatureRow` has been called for every changed row in the current batch.
+8. If the batch is too large, process the first 5-10 rows fully and report that the update is partial. Do not claim the Update action is complete.
+9. GitHub PR Docs are normal Docs. If a GitHub PR Doc was synced into Features, extract Summary, Quotes, Voice, Concerns, Decision Style, Principles, and Tags from the PR page content.
+10. After changed Features are extracted, collect affected owner IDs from the `owner_ids` returned by `syncChangedFeatures`.
+11. For each affected Owner ID, call `getFeaturesForOwner`.
+12. Refreshing a Persona means create or update. If no existing Persona matches the Owner User ID, create a new draft Persona with `owner_user_id` set, `handle` inferred from the owner's display name, `display_name` set, `enabled = false`, and `sync_status = Needs Review`.
+13. Do not skip persona refresh merely because no existing Persona row matches the Owner User ID.
+14. If a Feature has no Owner, try to pick an existing Persona by Team:
+   - GitHub PRs and technical docs -> existing engineering Persona
+   - Launch plans, GTM, sales, pricing, revenue docs -> existing sales Persona if available; otherwise marketing
+   - Designs, ads, press, social, brand, messaging docs -> existing marketing Persona
+15. Use the selected Persona's `Owner User ID` for grouping/refresh. Prefer enabled Personas with non-empty `Owner User ID`.
+16. Skip persona creation only when no existing Persona can be selected.
+17. At the end, report:
    - number of Docs synced
    - number of Features updated
    - Personas created
@@ -152,8 +164,8 @@ Steps:
 
 1. Prefer the GitHub MCP connection for reading PR context when available.
 2. Use `importGithubPullRequests` to create missing raw Docs rows for the most recently updated PRs.
-3. Store each PR as a Docs page. The PR body/README should be the page content. `External ID` should identify the PR so imports are idempotent.
-4. Ignore PRs that already exist in Docs.
+3. Store each PR as a Docs page. The PR body/README should be the page content.
+4. Ignore PRs that already exist in Docs by title. PR import titles are stable: `GitHub PR <owner>/<repo> #<number>`.
 5. After importing, run the Update action so new PR docs become Features and affected Personas refresh.
 
 Default tool inputs:

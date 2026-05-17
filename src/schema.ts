@@ -19,7 +19,6 @@ export const PERSONAS_PROPERTIES = [
 export const DOCS_PROPERTIES = [
 	"Name",
 	"Owner",
-	"External ID",
 ] as const;
 
 export const FEATURES_PROPERTIES = [
