@@ -2,6 +2,8 @@
 
 AI-powered digital twins that review, debate, and comment as your team — built natively on Notion.
 
+[![Notwin Demo](https://cdn.loom.com/sessions/thumbnails/2f70f2385a204b92b322b579a3117270-with-play.gif)](https://www.loom.com/share/2f70f2385a204b92b322b579a3117270)
+
 ## What This Is
 
 Notwin is a Notion-native system made of:
